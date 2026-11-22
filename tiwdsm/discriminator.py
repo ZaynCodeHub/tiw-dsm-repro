@@ -73,7 +73,10 @@ class TimeDiscriminator(nn.Module):
             self.extractor = _adm_extractor()
             if extractor_ckpt is not None:
                 self.extractor.load_state_dict(torch.load(extractor_ckpt, map_location="cpu"))
-            self.extractor.eval().requires_grad_(False)
+            # Frozen = never optimised and kept in eval mode. We do NOT call requires_grad_(False): ADM's
+            # attention blocks always use gradient checkpointing, whose backward needs parameters that
+            # require grad, and TIW-DSM needs gradients through the extractor w.r.t. the input image.
+            self.extractor.eval()
             self.head = _adm_head()
         elif backbone == "scratch":
             self.extractor = None
@@ -84,9 +87,13 @@ class TimeDiscriminator(nn.Module):
     def trainable_parameters(self):
         return self.head.parameters()
 
-    def forward(self, x_vp, tau):
+    def forward(self, x_vp, tau, grad_through_extractor=True):
         if self.backbone == "adm":
-            feat = self.extractor(x_vp, timesteps=tau, feature=True)
+            if grad_through_extractor:
+                feat = self.extractor(x_vp, timesteps=tau, feature=True)
+            else:  # discriminator training: features are fixed inputs to the head (as in the official code)
+                with torch.no_grad():
+                    feat = self.extractor(x_vp, timesteps=tau, feature=True)
             return self.head(feat, tau).view(-1)  # logits (we apply sigmoid / BCE-with-logits ourselves)
         return self.head(x_vp, tau)
 
@@ -98,7 +105,7 @@ def load_discriminator(path: str, extractor_ckpt: str | None, device):
     state = torch.load(path, map_location="cpu")
     disc = TimeDiscriminator(state["backbone"], extractor_ckpt if state["backbone"] == "adm" else None)
     disc.head.load_state_dict(state["head"])
-    return disc.to(device).eval().requires_grad_(False)
+    return disc.to(device).eval()  # parameters are never passed to an optimiser in stage 2
 
 
 def prob_ref(disc, x_edm, sigma):

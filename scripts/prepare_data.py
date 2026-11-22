@@ -37,6 +37,7 @@ def fetch_cifar(split, out):
         return
     import pyarrow.parquet as pq
     from PIL import Image
+    os.makedirs(os.path.dirname(out), exist_ok=True)
     tmp = out + ".parquet"
     urllib.request.urlretrieve(HF + f"{split}-00000-of-00001.parquet", tmp)
     t = pq.read_table(tmp, columns=["img", "label"])

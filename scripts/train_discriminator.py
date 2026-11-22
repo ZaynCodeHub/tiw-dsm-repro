@@ -39,7 +39,7 @@ def diagnose(disc, bias, ref, device, n=500, taus=(0.01, 0.05, 0.1, 0.2, 0.3, 0.
             tt = tau[:len(x0)]
             mm, ss = m[:len(x0)], s[:len(x0)]
             xt = mm.view(-1, 1, 1, 1) * x0 + ss.view(-1, 1, 1, 1) * torch.randn(x0.shape, generator=g).to(device)
-            store.append(torch.sigmoid(disc(xt, tt).float()).cpu())
+            store.append(torch.sigmoid(disc(xt, tt, grad_through_extractor=False).float()).cpu())
         pb, pr = torch.cat(pb), torch.cat(pr)
         acc = 0.5 * (float((pr > 0.5).float().mean()) + float((pb <= 0.5).float().mean()))
         wb = (pb / (1 - pb)).clamp(max=1e4)
@@ -85,7 +85,7 @@ def main():
             m, s = vpsde.marginal(tau)
             xt = m.view(-1, 1, 1, 1) * x0 + s.view(-1, 1, 1, 1) * torch.randn_like(x0)
             with torch.autocast(device_type=dev, dtype=torch.float16, enabled=a.amp and dev == "cuda"):
-                logits = disc(xt, tau)
+                logits = disc(xt, tau, grad_through_extractor=False)
             loss = bce(logits.float(), lab)
             opt.zero_grad(set_to_none=True)
             scaler.scale(loss).backward(); scaler.step(opt); scaler.update()
