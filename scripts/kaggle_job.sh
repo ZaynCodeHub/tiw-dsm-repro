@@ -2,6 +2,7 @@
 # One-command jobs for Kaggle "Save & Run All" sessions (12 h limit).
 #   bash scripts/kaggle_job.sh tiw    # data + discriminator + TIW-DSM training
 #   bash scripts/kaggle_job.sh obs    # data + DSM(obs) training
+#   bash scripts/kaggle_job.sh both   # T4 x2: DSM(obs) on GPU 1 and discriminator + TIW-DSM on GPU 0, in parallel
 #   bash scripts/kaggle_job.sh eval   # needs the tiw and obs outputs attached as inputs
 set -euo pipefail
 JOB=${1:?job}
@@ -18,6 +19,15 @@ case "$JOB" in
   tiw)
     python scripts/train_discriminator.py --iters "${DISC_ITERS:-10000}"
     python scripts/train_score.py --mode tiw --outdir runs/tiw --duration_mimg "${MIMG:-11}" --time_limit_h "$(left_h)"
+    ;;
+  both)
+    CUDA_VISIBLE_DEVICES=1 python scripts/train_score.py --mode obs --outdir runs/obs --duration_mimg "${MIMG:-11}" \
+        --time_limit_h "$(left_h)" > runs_obs.log 2>&1 &
+    OBS_PID=$!
+    export CUDA_VISIBLE_DEVICES=0
+    python scripts/train_discriminator.py --iters "${DISC_ITERS:-10000}"
+    python scripts/train_score.py --mode tiw --outdir runs/tiw --duration_mimg "${MIMG:-11}" --time_limit_h "$(left_h)"
+    wait $OBS_PID || echo "obs exited with an error"; tail -5 runs_obs.log; mkdir -p runs; cp runs_obs.log runs/
     ;;
   obs)
     python scripts/train_score.py --mode obs --outdir runs/obs --duration_mimg "${MIMG:-11}" --time_limit_h "$(left_h)"
