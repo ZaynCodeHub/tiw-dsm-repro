@@ -7,8 +7,8 @@ Group: Syed Zain Afaq (36234), Shaheer Ahmed Farooqui (19722), Huzaifa (19193). 
 
 | Artifact | Link |
 |---|---|
-| Code (this repo) | `<GITHUB_URL>` |
-| Trained weights (`tiw_dsm.pt`, `dsm_obs.pt`, `discriminator.pt`) | `<DRIVE_OR_HF_URL>` |
+| Code (this repo) | https://github.com/shaheer-geeksofkolachi/tiw-dsm-repro |
+| Trained weights (`tiw_dsm.pt`, `dsm_obs.pt`, `discriminator.pt`) | Kaggle notebook output: https://www.kaggle.com/code/shaheerfarooqui19722/tiw-dsm-eval/output (`tiw-dsm-repro/checkpoints/deploy/`) |
 | Final report (PDF) | `report/main.pdf` |
 
 > **Freeze rule:** the last commit and the cloud files must be dated before **25 Nov 2026, 23:55**.
@@ -18,7 +18,7 @@ Group: Syed Zain Afaq (36234), Shaheer Ahmed Farooqui (19722), Huzaifa (19193). 
 ## 1. Setup
 
 ```bash
-git clone <GITHUB_URL> tiw-dsm-repro && cd tiw-dsm-repro
+git clone https://github.com/shaheer-geeksofkolachi/tiw-dsm-repro tiw-dsm-repro && cd tiw-dsm-repro
 python -m venv .venv && source .venv/bin/activate     # Windows: .venv\Scripts\activate
 pip install -r requirements.txt                          # install a CUDA build of torch first if you have a GPU
 ```

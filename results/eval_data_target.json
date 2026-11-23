@@ -1,0 +1,39 @@
+{
+  "name": "data_target",
+  "n_images": 10000,
+  "fid": 3.1517667043615916,
+  "precision": 0.6849,
+  "recall": 0.6938,
+  "n_pr": 10000,
+  "class_share": [
+    0.1023,
+    0.0997,
+    0.0973,
+    0.0984,
+    0.1023,
+    0.1013,
+    0.0998,
+    0.0983,
+    0.1006,
+    0.1
+  ],
+  "class_share_named": {
+    "airplane": 0.1023,
+    "automobile": 0.0997,
+    "bird": 0.0973,
+    "cat": 0.0984,
+    "deer": 0.1023,
+    "dog": 0.1013,
+    "frog": 0.0998,
+    "horse": 0.0983,
+    "ship": 0.1006,
+    "truck": 0.1
+  },
+  "l1_to_uniform": 0.013,
+  "kl_to_uniform": 0.0001275,
+  "head_share": 0.5,
+  "tail_share": 0.5,
+  "max_over_min": 1.0514,
+  "bias_eq51": 0.10093756020069122,
+  "real": "target"
+}

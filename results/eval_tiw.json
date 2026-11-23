@@ -1,0 +1,59 @@
+{
+  "name": "tiw",
+  "n_images": 50000,
+  "fid": 51.30008298998325,
+  "precision": 0.6456,
+  "recall": 0.3228,
+  "n_pr": 10000,
+  "class_share": [
+    0.1014,
+    0.0671,
+    0.04086,
+    0.13154,
+    0.14508,
+    0.04296,
+    0.1343,
+    0.0567,
+    0.11024,
+    0.16982
+  ],
+  "class_share_named": {
+    "airplane": 0.1014,
+    "automobile": 0.0671,
+    "bird": 0.04086,
+    "cat": 0.13154,
+    "deer": 0.14508,
+    "dog": 0.04296,
+    "frog": 0.1343,
+    "horse": 0.0567,
+    "ship": 0.11024,
+    "truck": 0.16982
+  },
+  "l1_to_uniform": 0.38476,
+  "kl_to_uniform": 0.09993,
+  "head_share": 0.48598,
+  "tail_share": 0.51402,
+  "max_over_min": 4.1561,
+  "bias_eq51": 0.36562156677246094,
+  "ckpt": "runs/tiw/ema_003512k.pt",
+  "ckpt_sha256": "1366bae91a89",
+  "meta": {
+    "preset": "small",
+    "mode": "tiw",
+    "no_reweight": false,
+    "no_correction": false,
+    "nimg": 3512320,
+    "train_hours": 8.3331,
+    "batch": 256,
+    "n_params": 8952067
+  },
+  "steps": 18,
+  "solver": "heun",
+  "nfe": 35,
+  "gen_seconds": 2340.91,
+  "ms_per_image": 46.818,
+  "seeds": [
+    0,
+    49999
+  ]
+}

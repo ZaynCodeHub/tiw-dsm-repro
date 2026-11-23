@@ -19,9 +19,9 @@ from tiwdsm import CLASS_NAMES  # noqa: E402
 
 FIG = "report/figures"
 GEN = "report/generated"
-LABEL = {"obs": "DSM(obs)", "tiw": "TIW-DSM", "iw": "IW-DSM", "ref": "DSM(ref)",
+LABEL = {"obsfull": "DSM(obs), 11 Mimg", "obs": "DSM(obs)", "tiw": "TIW-DSM", "iw": "IW-DSM", "ref": "DSM(ref)",
          "tiwW": "TIW (W only)", "tiwC": "TIW (C only)"}
-COLORS = {"obs": "#E8871E", "tiw": "#2F75B5", "iw": "#8E6BB8", "ref": "#5F6B75", "tiwW": "#18A999", "tiwC": "#C0392B"}
+COLORS = {"obsfull": "#B5651D", "obs": "#E8871E", "tiw": "#2F75B5", "iw": "#8E6BB8", "ref": "#5F6B75", "tiwW": "#18A999", "tiwC": "#C0392B"}
 PAPER = {"ref": 16.47, "obs": 12.99, "iw": 15.79, "tiw": 11.51, "tiwW": 13.27, "tiwC": 11.62}
 PENDING = r"\pending"
 
@@ -95,7 +95,7 @@ def main():
             if "w_mean" in L[0]:
                 ax[1].plot(k, [r["w_mean"] for r in L], label=f"{LABEL.get(name, name)} mean $\\tilde w$", color=COLORS.get(name))
                 ax[1].plot(k, [r["w_std"] for r in L], ls="--", label=f"std $\\tilde w$", color=COLORS.get(name), alpha=0.6)
-            ax[2].plot(k, [r["sec_per_kimg"] for r in L], label=LABEL.get(name, name), color=COLORS.get(name))
+            ax[2].bar(LABEL.get(name, name), float(np.median([r["sec_per_kimg"] for r in L])), color=COLORS.get(name))
             args = load(os.path.join(d, "args.json")) or {}
             M += macro(f"resHours{name}", fmt(L[-1]["train_hours"], 1))
             M += macro(f"resMimg{name}", fmt(L[-1]["kimg"] / 1000, 2))
@@ -105,13 +105,13 @@ def main():
             grids = sorted(glob.glob(os.path.join(d, "samples_*k.png")))
             if grids:
                 shutil.copy(grids[-1], f"{FIG}/samples_{name}.png")
-        ax[0].set_yscale("log"); ax[0].set_title("training loss"); ax[0].set_xlabel("Mimg"); ax[0].legend()
+        ax[0].set_yscale("log"); ax[0].set_title("training loss (objectives differ)"); ax[0].set_xlabel("Mimg"); ax[0].legend()
         ax[1].set_title("TIW weight $\\tilde w = 2d$"); ax[1].set_xlabel("Mimg"); ax[1].legend(fontsize=7)
-        ax[2].set_title("seconds per kimg"); ax[2].set_xlabel("Mimg")
+        ax[2].set_title("median seconds per 1,000 images (T4)")
         fig.tight_layout(); fig.savefig(f"{FIG}/training_curves.png", dpi=170); plt.close(fig)
 
     # ---------------------------------------------------------------- main results
-    order = ["ref", "obs", "iw", "tiwW", "tiwC", "tiw"]
+    order = ["ref", "obs", "iw", "tiwW", "tiwC", "tiw", "obsfull"]
     ev = {n: load(f"results/eval_{n}.json") for n in order}
     real = {n: load(f"results/eval_data_{n}.json") for n in ["bias", "ref", "target"]}
     rows = ""
@@ -119,8 +119,10 @@ def main():
         e = ev[n]
         if e is None and n not in ("obs", "tiw"):
             continue
+        if n == "obsfull":
+            rows += "\\midrule\n"
         g = lambda k, nd=2, s=1: fmt(e[k] * s if e and k in e else None, nd)  # noqa: E731
-        rows += (f"{LABEL[n]} & {fmt(PAPER.get(n))} & {g('fid')} & {g('precision', 3)} & {g('recall', 3)} & "
+        rows += (f"{LABEL[n]} & {fmt(PAPER.get(n)) if n in PAPER else '--'} & {g('fid')} & {g('precision', 3)} & {g('recall', 3)} & "
                  f"{g('bias_eq51', 3)} & {g('tail_share', 1, 100)} & {g('l1_to_uniform', 3)} \\\\\n")
         if e:
             M += macro(f"resFID{n}", g("fid")); M += macro(f"resRecall{n}", g("recall", 3))

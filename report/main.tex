@@ -84,8 +84,8 @@
 \newcommand{\fig}[3][\linewidth]{\IfFileExists{figures/#2}{\includegraphics[width=#1]{figures/#2}}{\pendingfig{#3}}}
 
 % ---- links (replace before submission) --------------------------------------
-\newcommand{\repoURL}{\textcolor{TodoFr}{\texttt{https://github.com/<team>/tiw-dsm-repro}}}
-\newcommand{\weightsURL}{\textcolor{TodoFr}{\texttt{https://drive.google.com/<shared-folder>}}}
+\newcommand{\repoURL}{\url{https://github.com/shaheer-geeksofkolachi/tiw-dsm-repro}}
+\newcommand{\weightsURL}{\url{https://www.kaggle.com/code/shaheerfarooqui19722/tiw-dsm-eval/output}}
 
 % ---- experimental numbers ----------------------------------------------------
 \input{generated/defaults.tex}
@@ -126,14 +126,15 @@ Date & 25 November 2026 \\
 \begin{tabularx}{0.93\textwidth}{>{\bfseries\small}p{40mm}Y}
 \toprule
 Source code (GitHub) & \repoURL \\
-Trained weights & \weightsURL\ \ (\texttt{tiw\_dsm.pt}, \texttt{dsm\_obs.pt}, \texttt{discriminator.pt}) \\
+Trained weights & \weightsURL\ \ (folder \texttt{tiw-dsm-repro/checkpoints/deploy/}: \texttt{tiw\_dsm.pt}, \texttt{dsm\_obs.pt}) \\
+Training / evaluation runs & \url{https://www.kaggle.com/code/shaheerfarooqui19722/tiw-dsm-train}, \url{https://www.kaggle.com/code/shaheerfarooqui19722/tiw-dsm-eval} \\
 Run everything & \texttt{README.md} and \texttt{notebooks/run\_on\_kaggle.ipynb} in the repository \\
 Launch the app & \texttt{streamlit run app/streamlit\_app.py} (Section~\ref{sec:deploy}) \\
 LaTeX source & \texttt{report/main.tex}, \texttt{report/references.bib} (bonus; Deliverable 2 was also in \LaTeX) \\
 \bottomrule
 \end{tabularx}
 \end{center}
-\callout{\textbf{Summary.} We re-implemented TIW-DSM in our own PyTorch code: the time-dependent discriminator, the reweighted and score-corrected objective, the EDM sampler, the evaluation suite and a Streamlit app. We trained DSM(obs) and TIW-DSM under the same reduced-compute budget on the authors' exact CIFAR-10 LT / 5\% files. TIW-DSM reaches FID \resFIDtiw{} versus \resFIDobs{} for DSM(obs) (paper: 11.51 vs.\ 12.99) and changes the Eq.~51 bias metric from \resBiasobs{} to \resBiastiw. Our additional experiment measures how the sampling budget (3--49 network evaluations, Heun vs.\ Euler) trades off quality, class balance and speed.}
+\callout{\textbf{Summary.} We re-implemented TIW-DSM in our own PyTorch code (time-dependent discriminator, reweighted and score-corrected objective, EDM sampler, evaluation suite, Streamlit app) and trained DSM(obs) and TIW-DSM on the authors' exact CIFAR-10 LT / 5\% files on free Kaggle GPUs, comparing both at the same 3.51M training images. \textbf{The debiasing claim reproduced:} the share of generated tail-class images rose from \resTailobs\% (DSM(obs)) to \resTailtiw\% (target 50\%), and the paper's Eq.~51 bias fell from \resBiasobs{} to \resBiastiw{} (\resBiasRed\% lower). \textbf{The FID improvement did not:} under our reduced compute TIW-DSM scored FID \resFIDtiw{} vs.\ \resFIDobs{} (paper: 11.51 vs.\ 12.99), with higher precision but lower recall. Our diagnostics point to an over-confident discriminator that gives almost zero weight to biased images at low noise. The additional experiment shows TIW-DSM keeps its lower bias at every sampling budget of 17 network evaluations or more.}
 
 \newpage
 \tableofcontents
@@ -307,14 +308,14 @@ app/streamlit\_app.py & deployment \\
 \begin{tabularx}{\textwidth}{p{30mm}p{37mm}p{37mm}Y}
 \toprule
 Item & Original & Ours & Expected effect \\ \midrule
-Hardware & 4$\times$ RTX 4090 & 1$\times$ \resStepsDevice{} (free Kaggle) & time only \\
+Hardware & 4$\times$ RTX 4090 & 2$\times$ \resStepsDevice{} (free Kaggle; one GPU per model, in parallel) & time only \\
 Score network & DDPM++, 56M & DDPM++-style, \resParams M & less capacity; higher absolute FID for \emph{both} methods \\
-Batch / lr & 256 / $10^{-3}$, 10 Mimg ramp-up & 256 / $10^{-3}$, 10 Mimg ramp-up & same \\
-Duration & 11 Mimg & obs: \resMimgobs{}, tiw: \resMimgtiw{} Mimg (equal for both) & if lower: under-trained, higher FID \\
+Batch / lr & 256 / $10^{-3}$, 10 Mimg ramp-up & 256 (TIW: 2$\times$128 micro-batches, GPU memory) / $10^{-3}$, 10 Mimg ramp-up & same effective batch \\
+Duration & 11 Mimg & TIW-DSM \resMimgtiw{} Mimg (12-h session limit); DSM(obs) \resMimgobs{} Mimg. \textbf{Compared at 3.51 Mimg} (same checkpoint length for both) & under-trained: higher FID; learning rate only reached 35\% of its peak \\
 EMA / dropout & 0.5 Mimg / 0.13 & 0.5 Mimg / 0.13 & same \\
 Augmentation & EDM pipeline, $p=0.12$ & horizontal flip only & more memorisation risk on 10.5k unique images \\
 Precision & fp32 & fp16 autocast + loss scaling & small numerical noise \\
-Discriminator & ADM features + head, 10k it., batch 128+128 & same; lr $3\cdot10^{-4}$ (official script default) & same \\
+Discriminator & ADM features + head, 10k it., batch 128+128 & same; lr $3\cdot10^{-4}$ (official script default); \resDiscMinutes{} min on T4 & same \\
 Correction term & code: from $\nabla d$ & from $\nabla\log d$ (paper Eq.~10/36) & follows the paper's equation exactly \\
 FID & EDM \texttt{fid.py}, 50k vs.\ CIFAR-10 train & \texttt{pytorch-fid} (same TF Inception weights), 50k vs.\ all 50k train images & small constant offset possible \\
 Sampler & EDM Heun, 18 steps (35 NFE) & identical & same \\
@@ -327,15 +328,15 @@ All design choices that are not compute-driven follow the official code (checked
 
 \subsection{Environment and dependencies}
 \begin{center}\small
-\begin{tabular}{ll}
+\begin{tabularx}{\textwidth}{lY}
 \toprule
 Language / framework & Python 3.10+, PyTorch $\ge$ 2.1 \cite{paszke2019pytorch} (CUDA for training; CPU works for inference) \\
-Training hardware & 1 GPU on Kaggle: \resStepsDevice; 16 GB; 12-hour sessions, resumable checkpoints \\
+Training hardware & Kaggle GPU T4 $\times$2 (15 GB each); one 11.3-h session for both models, one 3-h session for evaluation \\
 Main packages & numpy, scipy, pillow, pyarrow, gdown, pytorch-fid 0.3.0 \cite{seitzer2020pytorchfid}, matplotlib, streamlit \cite{streamlit} \\
 Pinned list & \texttt{requirements.txt} in the repository \\
 Seeds & training seed 0; evaluation image $k$ uses noise seed $k$ (identical across models) \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{center}
 
 \subsection{Code and result attribution}\label{sec:attrib}
@@ -485,7 +486,7 @@ VP time $\tau$ & EDM $\sigma$ & bal.\ acc.\ (\%) & mean $d$ on $\Dref$ & mean $d
 \caption{Training curves. Left: loss. Middle: mean and std of the TIW weight $\tilde w=2d$ on training batches (ideal mean $\approx1$). Right: seconds per 1{,}000 images.}
 \label{fig:curves}
 \end{figure}
-DSM(obs) trained for \resMimgobs{} Mimg in \resHoursobs{} h (\resSecKimgobs{} s/kimg) and TIW-DSM for \resMimgtiw{} Mimg in \resHourstiw{} h (\resSecKimgtiw{} s/kimg). The extra cost of TIW-DSM is the discriminator's forward and input-gradient pass at every step; the paper reports 0.34 vs.\ 0.26 s/batch for the same comparison.
+Both models were trained in one Kaggle session on two T4 GPUs in parallel. DSM(obs) completed \resMimgobs{} Mimg in \resHoursobs{} h (\resSecKimgobs{} s/kimg). TIW-DSM first waited for the discriminator (\resDiscMinutes{} min) and then reached \resMimgtiw{} Mimg in \resHourstiw{} h (\resSecKimgtiw{} s/kimg) before the session limit. The extra cost of TIW-DSM is the forward and input-gradient pass through the 48M-parameter frozen ADM extractor at every step. It made each image about 4$\times$ more expensive in our setup, versus 1.3$\times$ in the paper (0.34 vs.\ 0.26 s/batch), where the score network is 6$\times$ larger. Its GPU also needed 2 micro-batches of 128 to fit. The two loss curves are not directly comparable because TIW-DSM's loss is reweighted and has a shifted target. The TIW weight statistics stay stable throughout (mean $\approx$0.84, std $\approx$0.91).
 
 \subsection{Main results}
 \begin{table}[H]
@@ -502,7 +503,7 @@ Method & Paper FID & Our FID$\downarrow$ & Prec.$\uparrow$ & Recall$\uparrow$ & 
 \bottomrule
 \end{tabular}
 \end{table}
-\todobox{Write 3--4 sentences here: (1) the FID gap DSM(obs)$\to$TIW-DSM is \resFIDgain{} (paper: 1.48); (2) the bias metric drops by \resBiasRed\%; (3) whether the ordering DSM(obs) $>$ TIW-DSM in FID matches the paper; (4) how far our absolute FIDs are from 12.99/11.51 and how that compares with the real-data floor \resFIDtestfloor{} (FID of the 10k CIFAR-10 test images).}
+\textbf{Reading the table.} At equal training length (3.51 Mimg), TIW-DSM is clearly less biased than DSM(obs) on every class-balance measure. Eq.~51 bias drops from \resBiasobs{} to \resBiastiw{} (\resBiasRed\% lower), the $L_1$ distance of the class histogram to uniform from \resLoneobs{} to \resLonetiw, and the tail share rises from \resTailobs\% to \resTailtiw\%, essentially the 50\% target. For reference, the classifier itself gives a bias of 0.101 on real balanced test images (its noise floor), and 0.943 on $\Dbias$. The FID ordering of the paper did \emph{not} reproduce: TIW-DSM has FID \resFIDtiw{} against \resFIDobs{} for DSM(obs) (paper: 11.51 vs.\ 12.99). Precision is \emph{higher} for TIW-DSM (\resPrectiw{} vs.\ \resPrecobs) while recall is \emph{lower} (\resRecalltiw{} vs.\ \resRecallobs): its images are individually realistic but cover less of the target distribution. Absolute FIDs are far from the paper's (the real-data floor at 10k is \resFIDtestfloor), mostly because of training length: the same DSM(obs) run reaches FID 19.56 when trained for the full 11 Mimg, versus 35.20 at 3.51 Mimg. Section~\ref{sec:discussion} analyses why TIW-DSM lost diversity.
 
 \subsection{Class proportions}
 \begin{figure}[H]
@@ -529,7 +530,7 @@ Class & Target & $\Dbias$ & DSM(obs) & TIW-DSM \\ \midrule
 \centering
 \begin{minipage}{0.49\linewidth}\centering\fig{samples_obs.png}{DSM(obs) samples, seeds 0--63}\\ \small DSM(obs)\end{minipage}\hfill
 \begin{minipage}{0.49\linewidth}\centering\fig{samples_tiw.png}{TIW-DSM samples, seeds 0--63}\\ \small TIW-DSM\end{minipage}
-\caption{Samples from the final EMA weights with \emph{identical} noise seeds 0--63 (Heun, 35 NFE). The same position in both grids starts from the same noise, so differences come only from the training objective.}
+\caption{Samples from the 3.51-Mimg EMA weights with \emph{identical} noise seeds 0--63 (Heun, 35 NFE). DSM(obs) still produces many vehicles; TIW-DSM produces more animals and ships from the same noise. The same position in both grids starts from the same noise, so differences come only from the training objective.}
 \label{fig:samples}
 \end{figure}
 
@@ -546,7 +547,7 @@ This is a \emph{computational analysis / hyperparameter study} carried out on fi
 \end{itemize}
 
 \subsection{Setup}
-Both final EMA checkpoints; Heun with $\{3,5,9,13,18,25\}$ steps (NFE $=2N-1\in\{5,9,17,25,35,49\}$) and Euler with $\{5,9,17,25,35,49\}$ steps (NFE $=N$), giving matched NFE pairs. For each of the 24 settings we generate \resStepsN{} images with \emph{the same seeds}. We report FID-10k (an explicitly small-sample FID, comparable across settings but not with the 50k numbers), precision/recall, Eq.~51 bias, tail share, batched throughput (batch 500) and single-image latency (median of 5 runs, after warm-up) on \resStepsDevice.
+Both EMA checkpoints at 3.51 Mimg (the same ones as in Table~\ref{tab:main}); Heun with $\{3,5,9,13,18,25\}$ steps (NFE $=2N-1\in\{5,9,17,25,35,49\}$) and Euler with $\{5,9,17,25,35,49\}$ steps (NFE $=N$), giving matched NFE pairs. For each of the 24 settings we generate \resStepsN{} images with \emph{the same seeds}. We report FID-10k (an explicitly small-sample FID, comparable across settings but not with the 50k numbers), precision/recall, Eq.~51 bias, tail share, batched throughput (batch 500) and single-image latency (median of 5 runs, after warm-up) on \resStepsDevice.
 
 \subsection{Results}
 \begin{figure}[H]
@@ -568,28 +569,36 @@ Model & Solver & Steps & NFE & FID-10k & Recall & Bias & Tail \% & ms/img (batch
 \end{tabular}
 \end{table}
 At the paper's default (Heun, 18 steps), FID-10k is \resStepsFIDrefobs{} for DSM(obs) and \resStepsFIDreftiw{} for TIW-DSM, with bias \resStepsBiasrefobs{} vs.\ \resStepsBiasreftiw. The cheapest TIW-DSM setting within 10\% of its best FID-10k uses \resStepsKneeNFE{} NFE (FID-10k \resStepsKneeFID).
-\todobox{State for each hypothesis whether it is supported, citing table rows: H1 (where the FID curve flattens; Heun vs.\ Euler at 17/25 NFE); H2 (is TIW-DSM's bias lower than DSM(obs)'s at every NFE? does tail share change with NFE?); H3 (ms/img vs.\ NFE slope, identical for both models). End with the recommended setting for the app.}
+\textbf{H1 (quality) -- partly supported.} FID-10k falls steeply and then saturates: for DSM(obs) with Heun it is 41.96 at 17 NFE, 37.76 at 25 and 37.44 at 35, with no gain at 49. Very low budgets break the 2nd-order solver: Heun with 3 steps (5 NFE) gives FID $\approx$339 for both models, while Euler at the same 5 NFE gives about 90. The expected Heun advantage appears only for DSM(obs) at $\geq$17 NFE (41.96 vs.\ 45.34 at 17). For TIW-DSM, Euler is as good or better at every budget (55.40 vs.\ 68.47 at 17 NFE; 52.16 vs.\ 53.13 at 35), and it has slightly higher recall.
+
+\textbf{H2 (balance) -- supported from 17 NFE upward.} At every budget of 17 NFE or more and for both solvers, TIW-DSM has lower Eq.~51 bias than DSM(obs) (Heun: 0.395/0.370/0.364/0.361 vs.\ 0.433/0.465/0.475/0.480; Euler: 0.420/0.398/0.385/0.376 vs.\ 0.587/0.530/0.498/0.490). Below that, samples are too degraded for the classifier-based measure to be meaningful. The solver also affects balance: Euler samples of both models contain fewer tail-class images than Heun samples at the same NFE (TIW-DSM 41.8--47.0\% vs.\ 50.2--56.3\%). The class balance is therefore not decided by the score field alone.
+
+\textbf{H3 (cost) -- supported.} Generation time is linear in NFE (about 1.3~ms per image per NFE when batched, about 15~ms per NFE for a single image on the T4) and identical for both models, because TIW-DSM needs no discriminator at sampling time.
+
+\textbf{Recommendation for the app.} 25 NFE (Heun 13 steps or Euler 25 steps) keeps FID within 6--10\% of the best value and the bias at its low plateau, at 70\% of the paper's 35-NFE cost. Euler 17 NFE is the cheapest acceptable setting for TIW-DSM.
 
 % ============================================================================
 \section{Analysis and Discussion}\label{sec:discussion}
 % ============================================================================
 \subsection{Did TIW-DSM reduce bias?}
-The central claim of the paper is that TIW-DSM moves the generated distribution toward $\pdata$ while keeping the diversity of $\Dbias$. In our runs the Eq.~51 bias goes from \resBiasobs{} (DSM(obs)) to \resBiastiw{} (TIW-DSM), and the tail share from \resTailobs\% to \resTailtiw\% (target 50\%, $\Dbias$ 7.2\%). Recall moves from \resRecallobs{} to \resRecalltiw. If recall had collapsed, the debiasing would have come from memorising $\Dref$, the DSM(ref) failure mode. A stable recall instead indicates that the model still uses the variety of $\Dbias$.
-\todobox{Confirm or adjust the last two sentences to match the measured recall values.}
+The central claim of the paper is that TIW-DSM moves the generated distribution toward $\pdata$ while keeping the diversity of $\Dbias$. In our runs the Eq.~51 bias goes from \resBiasobs{} (DSM(obs)) to \resBiastiw{} (TIW-DSM), and the tail share from \resTailobs\% to \resTailtiw\% (target 50\%, $\Dbias$ 7.2\%). The correction is visible per class (Table~\ref{tab:classshare}): airplanes fall from 28.4\% to 10.1\% (target 10\%) and automobiles from 15.1\% to 6.7\%, while ships and trucks rise from 5.5\% and 5.6\% to 11.0\% and 17.0\%. The correction is not uniform. Some tail classes overshoot (truck 17.0\%, deer 14.5\%) and others stay low (bird 4.1\%, dog 4.3\%), so the max/min class ratio is still 4.2 (DSM(obs): 7.6). The answer to the central question is therefore yes, with a cost: recall falls from \resRecallobs{} to \resRecalltiw. Part of the debiasing comes at the expense of diversity, the DSM(ref)-like failure mode the method is designed to avoid.
 
-\subsection{Sources of the reproduction gap}
-Our absolute FIDs are expected to sit above the paper's. The likely causes, from largest to smallest expected effect:
+\subsection{Why FID got worse: an over-confident discriminator}
+Our diagnostics point to one main mechanism. Table~\ref{tab:disc} shows that at low noise ($\tau\le0.1$) the discriminator separates the two sources with 99\% accuracy, and the median ratio it implies for biased images is $10^{-7}$--$10^{-5}$. Since $\tilde w=2d$, almost every image from $\Dbias$ receives a weight close to zero at these noise levels, and its score correction is large. The logged weights confirm this: across training, $\tilde w$ has mean 0.84 but standard deviation 0.91 (Fig.~\ref{fig:curves}), i.e.\ the weights are close to bimodal. At the noise levels that determine fine image detail, TIW-DSM therefore effectively trains on the 500 reference images (repeated 20 times) rather than on all 10{,}380 unique images. This is the density-chasm problem resurfacing at small $t$ (Section~\ref{sec:lit}), and it matches what we measure: higher precision (reference-like, clean images), lower recall (less variety), worse FID. A practical hint in the same direction: the official training script's default discriminator path points to the checkpoint saved at iteration 501. A briefly trained, less confident discriminator would produce flatter weights at small $t$. We trained ours for the full 10{,}000 iterations reported in the paper and did not have the budget to test earlier checkpoints.
+
+\subsection{Other sources of the reproduction gap}
+Our absolute FIDs sit far above the paper's for both methods. The other causes, from largest to smallest expected effect:
 \begin{enumerate}[leftmargin=5mm,itemsep=1pt,topsep=1pt]
 \item \textbf{Model capacity:} \resParams M vs.\ 56M parameters. FID on CIFAR-10 is very sensitive to network size. The effect applies equally to both methods, so it should change absolute values more than the \emph{difference} between methods.
 \item \textbf{Augmentation:} the paper uses EDM's augmentation pipeline at $p=0.12$; we use flips only. With 10{,}380 unique training images seen for many epochs, the risk of memorisation is higher, and memorisation hurts FID and recall.
-\item \textbf{Training length:} \resMimgtiw{} Mimg vs.\ 11 Mimg (if lower). The official learning-rate ramp lasts 10 Mimg, so a shorter run also ends at a lower learning rate.
+\item \textbf{Training length:} both models are compared at 3.51 Mimg instead of 11, where the learning rate had only ramped to 35\% of its peak. Training length alone moves DSM(obs) from FID 35.20 to 19.56, so this is the largest single factor for the absolute values. TIW-DSM was about 4$\times$ slower per image (\resSecKimgtiw{} vs.\ \resSecKimgobs{} s/kimg), which is why it did not get further.
 \item \textbf{Metric implementation:} \texttt{pytorch-fid} vs.\ EDM's \texttt{fid.py}. Both use the same Inception weights, but resizing details differ, which typically shifts FID by a small constant.
-\item \textbf{Discriminator quality:} the reference set has only 500 images. The ratio estimates, and hence the weights and corrections, are noisy, especially at small $t$ where the discriminator is most confident (Table~\ref{tab:disc}). As an aside, the official training script's default discriminator path points to the checkpoint saved at iteration 501, an early checkpoint. This suggests a well-regularised, less over-confident discriminator may be preferable, which we did not have time to test.
+\item \textbf{Reference set size:} only 500 reference images train the discriminator, which makes the over-confidence above more likely.
 \end{enumerate}
-\todobox{Compare the measured FID gap with the paper's (1.48) and say whether the \emph{relative} improvement reproduced even if absolute values differ.}
+In summary, the \emph{relative} FID improvement of 1.48 reported by the paper did not reproduce at our scale. We measured a 16.1-point degradation instead. The \emph{direction} of the debiasing effect did reproduce clearly.
 
 \subsection{What the discriminator diagnostics show}
-Table~\ref{tab:disc} directly tests the motivation of TIW. At small $t$ the two sources are easy to separate, and the implied ratio $w$ on biased images is far from 1. As $t$ grows, accuracy approaches 50\% and $d\to0.5$, i.e.\ $\tilde w\to1$. The correction therefore acts mainly at low and intermediate noise levels, where class identity is decided. At high noise the model is trained essentially as DSM(obs).
+Table~\ref{tab:disc} directly confirms the premise of TIW. The two perturbed distributions become harder to tell apart as noise grows: balanced accuracy is 99\% for $\tau\le0.1$, 95\% at 0.3, 70.5\% at 0.5 and chance (50\%) at 1.0, and $d\to0.5$ (i.e.\ $\tilde w\to1$) at high noise. The correction is therefore concentrated at low and intermediate noise, where class identity is decided, while at high noise TIW-DSM is trained essentially as DSM(obs). The same table also shows the downside discussed above: at low noise the ratio is not merely informative but saturated.
 
 \subsection{Why weighting alone is not enough}
 Section~\ref{sec:whyboth} shows analytically that a weight depending only on $\mathbf{x}_t$ cannot change the DSM minimiser. Our 2-D experiment confirms it (``W only'' $\approx$ DSM(obs), Table~\ref{tab:toy}), and so does the paper's own ablation (W only 13.27 vs.\ none 12.99). The score correction is the term that actually removes the bias. Weighting is a variance/capacity refinement on top of it. This also explains why IW-DSM can be worse than DSM(obs) on images (15.79 vs.\ 12.99 in the paper). Its \emph{clean-data} weights are extremely uneven, because the discriminator is near-certain at $t\approx0$. A few reference-like images then dominate the gradient, which lowers effective sample size and recall.
@@ -654,7 +663,7 @@ model, meta = load_ema("checkpoints/deploy/tiw_dsm.pt", "cpu")   # EMA weights o
 z = seeded_latents(range(2026, 2026 + 16))                         # input: seed 2026, 16 images
 imgs = to_uint8(sample(model, z, num_steps=18, solver="heun"))     # output: uint8 (16, 32, 32, 3)
 \end{lstlisting}
-On our hardware a batch of 16 images at 35 NFE takes \resMsImg{} ms per image on GPU (batched). See Table~\ref{tab:steps} for CPU/GPU single-image latency at every budget.
+On a Kaggle T4, generation at 35 NFE costs \resMsImg{} ms per image in batches of 500, or about 0.5~s for a single image (Table~\ref{tab:steps}). On a laptop CPU a batch of 16 images at 25 NFE takes a few seconds.
 
 \subsection{Application screenshots}
 \begin{figure}[H]
@@ -675,8 +684,8 @@ On our hardware a batch of 16 images at 35 NFE takes \resMsImg{} ms per image on
 \section{Limitations}\label{sec:limits}
 % ============================================================================
 \begin{itemize}[leftmargin=5mm,itemsep=2pt,topsep=1pt]
-\item \textbf{Reduced compute.} A \resParams M-parameter network, one GPU, flips instead of EDM augmentation and possibly fewer than 11 Mimg. Absolute FIDs are therefore not directly comparable to the paper. The comparison between methods is fair because both used the same budget, seeds and evaluation.
-\item \textbf{One seed per model.} Each score model was trained once, so we cannot report run-to-run variance. Small FID differences ($<$0.5) should not be over-interpreted.
+\item \textbf{Reduced compute.} A \resParams M-parameter network, flips instead of EDM augmentation, and 3.51 Mimg instead of 11 Mimg for the comparison. Absolute FIDs are therefore not comparable to the paper. The comparison between methods is fair: same data, architecture, training length, seeds and evaluation.
+\item \textbf{One seed per model, one discriminator.} Each model was trained once and we used one discriminator checkpoint (10k iterations). The diversity loss we observe may depend strongly on that checkpoint; we could not test earlier, less confident checkpoints in the time available.
 \item \textbf{Scope.} Only CIFAR-10 LT at 5\% was reproduced. CIFAR-100, FFHQ, CelebA and the other reference sizes were not. Only the DSM(obs) baseline was trained on images; IW-DSM, DSM(ref) and the W/C ablations are implemented (\texttt{--mode iw|ref}, \texttt{--no\_reweight}, \texttt{--no\_correction}) but only tested in 2-D.
 \item \textbf{Measuring bias with a classifier.} The bias metric depends on a VGG13-BN trained on real CIFAR-10. Its errors on generated images, which may be off-distribution, are not corrected, and it measures only class-level bias.
 \item \textbf{The reference set defines ``unbiased''.} TIW-DSM moves toward whatever $\Dref$ represents. With 500 images and a 1.63:1 spread across classes, $\Dref$ is itself a noisy target. The method cannot judge whether a target distribution is fair.
@@ -687,10 +696,9 @@ On our hardware a batch of 16 images at 35 NFE takes \resMsImg{} ms per image on
 % ============================================================================
 \section{Conclusion}\label{sec:conclusion}
 % ============================================================================
-We reproduced TIW-DSM from our own implementation on the authors' exact CIFAR-10 LT / 5\% data. Deriving the objective in EDM's denoiser form showed that TIW-DSM is standard diffusion training with a bounded per-sample weight $2d$ and a target shifted by $\sigma^2\nabla\log d$. Our analysis and the 2-D check show that the score-correction term is what removes the bias, while weighting alone leaves the minimiser unchanged. Under a reduced but equal budget, TIW-DSM reached FID \resFIDtiw{} vs.\ \resFIDobs{} for DSM(obs) (paper: 11.51 vs.\ 12.99) and changed the Eq.~51 bias from \resBiasobs{} to \resBiastiw. The additional experiment showed how far the sampling budget can be reduced before quality and balance degrade. This informed the default settings of our Streamlit application, which serves the trained model live on unseen seeds and uploaded images.
-\todobox{Adjust the wording of the second-to-last sentence once Table~\ref{tab:steps} is filled in.}
+We reproduced TIW-DSM from our own implementation on the authors' exact CIFAR-10 LT / 5\% data. Deriving the objective in EDM's denoiser form showed that TIW-DSM is standard diffusion training with a bounded per-sample weight $2d$ and a target shifted by $\sigma^2\nabla\log d$. Our analysis and the 2-D check show that the score-correction term is what removes the bias, while weighting alone leaves the minimiser unchanged. Under a reduced but equal budget (3.51 Mimg each), the debiasing effect reproduced. TIW-DSM raised the generated tail-class share from \resTailobs\% to \resTailtiw\% (target 50\%) and lowered the Eq.~51 bias by \resBiasRed\%. The FID improvement did not: \resFIDtiw{} vs.\ \resFIDobs{}, with lower recall. Our discriminator diagnostics explain this as near-zero weights for biased images at low noise, which shrink the effective training set at exactly the noise levels that control detail and diversity. The additional experiment showed that TIW-DSM keeps its bias advantage at every budget of 17 NFE or more, that Euler is competitive with Heun for this model, and that 25 NFE is a good deployment default. Our Streamlit application uses this default to serve the trained model live on unseen seeds and uploaded images.
 
-\textbf{Future work:} train the paper-sized \texttt{base} network with EDM augmentation; run IW-DSM and the W/C ablations on images; regularise or early-stop the discriminator; and test larger reference sets (10--50\%).
+\textbf{Future work:} first, regularise, temperature-scale or early-stop the discriminator so that $\tilde w$ is not saturated at small $t$, and re-train TIW-DSM (the cheapest test of our explanation); then train for the full 11 Mimg, use the paper-sized \texttt{base} network with EDM augmentation, run IW-DSM and the W/C ablations on images, and test larger reference sets (10--50\%).
 
 % ============================================================================
 \section{References}\label{sec:refs}

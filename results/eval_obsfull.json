@@ -1,0 +1,59 @@
+{
+  "name": "obsfull",
+  "n_images": 50000,
+  "fid": 19.563087810841637,
+  "precision": 0.5825,
+  "recall": 0.3923,
+  "n_pr": 10000,
+  "class_share": [
+    0.26304,
+    0.1583,
+    0.08348,
+    0.1145,
+    0.06822,
+    0.06184,
+    0.0659,
+    0.05494,
+    0.05664,
+    0.07314
+  ],
+  "class_share_named": {
+    "airplane": 0.26304,
+    "automobile": 0.1583,
+    "bird": 0.08348,
+    "cat": 0.1145,
+    "deer": 0.06822,
+    "dog": 0.06184,
+    "frog": 0.0659,
+    "horse": 0.05494,
+    "ship": 0.05664,
+    "truck": 0.07314
+  },
+  "l1_to_uniform": 0.47168,
+  "kl_to_uniform": 0.15626,
+  "head_share": 0.68754,
+  "tail_share": 0.31246,
+  "max_over_min": 4.7878,
+  "bias_eq51": 0.412855327129364,
+  "ckpt": "runs/obs/ema_final.pt",
+  "ckpt_sha256": "bf48d044d1c0",
+  "meta": {
+    "preset": "small",
+    "mode": "obs",
+    "no_reweight": false,
+    "no_correction": false,
+    "nimg": 11000064,
+    "train_hours": 6.6138,
+    "batch": 256,
+    "n_params": 8952067
+  },
+  "steps": 18,
+  "solver": "heun",
+  "nfe": 35,
+  "gen_seconds": 2552.48,
+  "ms_per_image": 51.05,
+  "seeds": [
+    0,
+    49999
+  ]
+}

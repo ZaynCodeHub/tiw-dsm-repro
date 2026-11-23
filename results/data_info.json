@@ -1,0 +1,30 @@
+{
+  "n_bias": 10000,
+  "n_ref": 500,
+  "bias_counts": [
+    4030,
+    2416,
+    1448,
+    868,
+    520,
+    312,
+    187,
+    112,
+    67,
+    40
+  ],
+  "ref_counts": [
+    51,
+    65,
+    43,
+    47,
+    50,
+    40,
+    53,
+    50,
+    45,
+    56
+  ],
+  "feature_extractor_available": true,
+  "eval_classifier_test_acc": 0.94
+}
