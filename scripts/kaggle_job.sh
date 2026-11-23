@@ -49,10 +49,31 @@ print(f"{max(ks[0] & ks[1]):06d}")
 EOF
 )
     echo "evaluating both models at ${K} kimg"
-    python scripts/evaluate.py --ckpt runs/obs/ema_${K}k.pt --name obs --num 50000
+    # real-data reference rows first (also builds the cached Inception statistics used by every later run)
+    for r in target bias ref; do python scripts/evaluate.py --real $r --name data_$r; done
+    # GPU 1: DSM(obs) at the common length + DSM(obs) at its full 11 Mimg + its sampling-budget sweep
+    ( export CUDA_VISIBLE_DEVICES=1
+      python scripts/evaluate.py --ckpt runs/obs/ema_${K}k.pt --name obs --num 50000
+      python scripts/evaluate.py --ckpt runs/obs/ema_final.pt --name obsfull --num 50000
+      python scripts/steps_experiment.py --ckpt obs=runs/obs/ema_${K}k.pt --num 10000 --out results/steps_obs.json
+    ) > eval_gpu1.log 2>&1 &
+    G1=$!
+    # GPU 0: TIW-DSM
+    export CUDA_VISIBLE_DEVICES=0
     python scripts/evaluate.py --ckpt runs/tiw/ema_${K}k.pt --name tiw --num 50000
-    for r in bias ref target; do python scripts/evaluate.py --real $r --name data_$r; done
-    python scripts/steps_experiment.py --ckpt obs=runs/obs/ema_${K}k.pt --ckpt tiw=runs/tiw/ema_${K}k.pt --num 10000
+    python scripts/steps_experiment.py --ckpt tiw=runs/tiw/ema_${K}k.pt --num 10000 --out results/steps_tiw.json
+    wait $G1 || echo "GPU1 eval exited with an error"; cat eval_gpu1.log | grep -v Warning | tail -40
+    python - <<'EOF2'
+import json
+rows = []
+for f in ("results/steps_obs.json", "results/steps_tiw.json"):
+    try:
+        rows += json.load(open(f))
+    except FileNotFoundError:
+        print("missing", f)
+json.dump(rows, open("results/steps_experiment.json", "w"), indent=2)
+EOF2
+    echo "$K" > results/eval_kimg.txt
     python scripts/make_report_assets.py --runs obs=runs/obs tiw=runs/tiw
     mkdir -p checkpoints/deploy
     cp runs/tiw/ema_${K}k.pt checkpoints/deploy/tiw_dsm.pt
