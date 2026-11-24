@@ -1,0 +1,6 @@
+# Lightweight CPU-only dependencies for Streamlit Community Cloud (app only).
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.5.1+cpu
+numpy
+pillow
+streamlit>=1.32
