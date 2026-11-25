@@ -1,738 +1,660 @@
-\documentclass[10pt,a4paper]{article}
-
-% -----------------------------------------------------------------------------
-% TIW-DSM Deliverable 3 - Final Report (LaTeX source)
-% Machine Learning course, Fall 2026
-% Compile:  python scripts/make_report_assets.py --runs obs=runs/obs tiw=runs/tiw
-%           cd report && latexmk -pdf main.tex
-% Every experimental number is read from generated/numbers.tex (written by the
-% evaluation scripts). Missing results print as a red [pending] marker.
-% -----------------------------------------------------------------------------
-
-\usepackage[a4paper,left=18mm,right=18mm,top=17mm,bottom=20mm]{geometry}
+\documentclass[11pt,a4paper]{article}
+% Main document for the final report. Compile with the companion figures,
+% bibliography and measured tables supplied in this project.
+\usepackage[a4paper,left=21mm,right=21mm,top=19mm,bottom=22mm,footskip=10mm]{geometry}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-\usepackage{lmodern}
-\usepackage{microtype}
-\usepackage{graphicx}
-\usepackage{booktabs}
-\usepackage{tabularx}
-\usepackage{array}
-\usepackage{multirow}
-\usepackage{enumitem}
-\usepackage{amsmath,amssymb,amsthm}
-\usepackage{xcolor}
-\usepackage{caption}
-\usepackage{fancyhdr}
-\usepackage{listings}
-\usepackage{tikz}
+\usepackage{lmodern,microtype,graphicx,booktabs,tabularx,array,enumitem}
+\usepackage{amsmath,amssymb,xcolor,caption,float,fancyhdr,listings,tikz}
 \usetikzlibrary{arrows.meta,positioning}
-\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
-\usepackage{hyperref}
-\usepackage{xurl}
-\usepackage{float}
-
-\definecolor{Navy}{HTML}{17365D}
-\definecolor{Blue}{HTML}{2F75B5}
-\definecolor{Teal}{HTML}{18A999}
-\definecolor{PaleBlue}{HTML}{EAF2F8}
-\definecolor{Grey}{HTML}{5F6B75}
-\definecolor{Pend}{HTML}{C0392B}
-\definecolor{TodoBg}{HTML}{FFF4D6}
-\definecolor{TodoFr}{HTML}{E8871E}
-\definecolor{RuleGreyC}{HTML}{C5D3E0}
-
-\hypersetup{colorlinks=true,linkcolor=Navy,citecolor=Blue,urlcolor=Blue,
-  pdftitle={TIW-DSM Deliverable 3 Final Report},
-  pdfauthor={Syed Zain Afaq, Shaheer Ahmed Farooqui, Huzaifa}}
-
+\usepackage{hyperref,xurl}
+\definecolor{Ink}{HTML}{1C3543}
+\definecolor{Accent}{HTML}{176764}
+\definecolor{Muted}{HTML}{465C65}
+\definecolor{Pale}{HTML}{F1F6F5}
+\definecolor{Rule}{HTML}{B8CDCB}
+\hypersetup{colorlinks=true,linkcolor=Ink,citecolor=Accent,urlcolor=Accent,
+ pdftitle={Learning a balanced image distribution from biased data},
+ pdfauthor={Syed Zain Afaq, Shaheer Ahmed Farooqui and Huzaifa}}
+\urlstyle{same}
 \setlength{\parindent}{0pt}
-\setlength{\parskip}{4pt}
-\setlength{\tabcolsep}{5pt}
-\renewcommand{\arraystretch}{1.13}
+\setlength{\parskip}{5pt plus 1pt}
+\setlength{\tabcolsep}{4pt}
+\setlength{\intextsep}{8pt plus 1pt}
+\renewcommand{\arraystretch}{1.15}
+\clubpenalty=10000 \widowpenalty=10000 \displaywidowpenalty=10000
+\hyphenpenalty=10000 \exhyphenpenalty=10000 \emergencystretch=3em
 \raggedbottom
 \newcolumntype{Y}{>{\raggedright\arraybackslash}X}
-
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
 \makeatletter
-\renewcommand\section{\@startsection{section}{1}{\z@}{1.2ex \@plus .2ex \@minus .1ex}{0.5ex \@plus .1ex}{\normalfont\Large\bfseries\color{Navy}}}
-\renewcommand\subsection{\@startsection{subsection}{2}{\z@}{0.9ex \@plus .2ex \@minus .1ex}{0.3ex \@plus .1ex}{\normalfont\normalsize\bfseries\color{Blue}}}
-\renewcommand\subsubsection{\@startsection{subsubsection}{3}{\z@}{0.6ex}{0.2ex}{\normalfont\normalsize\itshape\color{Navy}}}
+\renewcommand\section{\@startsection{section}{1}{\z@}{2ex plus .3ex}{.7ex}{\normalfont\LARGE\bfseries\color{Ink}\raggedright}}
+\renewcommand\subsection{\@startsection{subsection}{2}{\z@}{1.5ex plus .2ex}{.4ex}{\normalfont\large\bfseries\color{Accent}\raggedright}}
+\newcommand{\rowsfile}[1]{\@@input generated/#1.tex }
 \makeatother
-
-\captionsetup{font={small},labelfont={bf,color=Navy},justification=centering,skip=3pt}
+\setlist[enumerate]{leftmargin=6mm,itemsep=2pt,topsep=3pt,parsep=0pt}
+\captionsetup{font=small,labelfont={bf,color=Accent},justification=raggedright,singlelinecheck=false,skip=4pt}
 \pagestyle{fancy}\fancyhf{}
 \renewcommand{\headrulewidth}{0pt}\renewcommand{\footrulewidth}{0.4pt}
-\fancyfoot[L]{\footnotesize\color{Grey}TIW-DSM Final Report -- Deliverable 3}
-\fancyfoot[R]{\footnotesize\color{Grey}Page \thepage}
-\fancypagestyle{plain}{\fancyhf{}\renewcommand{\headrulewidth}{0pt}\renewcommand{\footrulewidth}{0pt}}
-
-\lstset{basicstyle=\ttfamily\footnotesize,breaklines=true,frame=single,rulecolor=\color{RuleGreyC},
-  backgroundcolor=\color{PaleBlue},columns=fullflexible,keepspaces=true,showstringspaces=false}
-
-\newtheorem{theorem}{Theorem}
-\newcommand{\Dbias}{\mathcal{D}_{\mathrm{bias}}}
-\newcommand{\Dref}{\mathcal{D}_{\mathrm{ref}}}
-\newcommand{\Dobs}{\mathcal{D}_{\mathrm{obs}}}
+\fancyfoot[L]{\small\color{Muted}Machine Learning \enspace\textbar\enspace Final report}
+\fancyfoot[R]{\small\color{Muted}\thepage}
+\lstset{basicstyle=\ttfamily\footnotesize,columns=fullflexible,keepspaces=true,showstringspaces=false,breaklines=true,
+ frame=single,rulecolor=\color{Rule},backgroundcolor=\color{Pale},xleftmargin=2mm,xrightmargin=2mm,framesep=4pt}
+\newcommand{\Dbias}{\mathcal D_{\mathrm{bias}}}
+\newcommand{\Dref}{\mathcal D_{\mathrm{ref}}}
+\newcommand{\Dobs}{\mathcal D_{\mathrm{obs}}}
 \newcommand{\pdata}{p_{\mathrm{data}}}
 \newcommand{\pbias}{p_{\mathrm{bias}}}
 \newcommand{\pobs}{p_{\mathrm{obs}}}
-\newcommand{\callout}[1]{\begin{center}\fcolorbox{Blue}{PaleBlue}{\parbox{0.93\linewidth}{\color{Navy}#1}}\end{center}}
-\newcommand{\pending}{\textcolor{Pend}{\textbf{[pending]}}}
-\newcommand{\todobox}[1]{\begin{center}\fcolorbox{TodoFr}{TodoBg}{\parbox{0.93\linewidth}{\small\textbf{\color{TodoFr}FINALISE AFTER RESULTS:} #1}}\end{center}}
-\newcommand{\pendingfig}[2][0.32\textheight]{\fcolorbox{Pend}{white}{\parbox[c][#1][c]{0.9\linewidth}{\centering\color{Pend}\textbf{[pending figure]}\\[2pt]\small #2}}}
-\makeatletter\newcommand{\rowsfile}[1]{\@@input generated/#1.tex }\makeatother
-\newcommand{\fig}[3][\linewidth]{\IfFileExists{figures/#2}{\includegraphics[width=#1]{figures/#2}}{\pendingfig{#3}}}
-
-% ---- links (replace before submission) --------------------------------------
 \newcommand{\repoURL}{\url{https://github.com/shaheer-geeksofkolachi/tiw-dsm-repro}}
+\newcommand{\appURL}{\url{https://tiwdsm-cifar10-demo.streamlit.app}}
 \newcommand{\weightsURL}{\url{https://github.com/shaheer-geeksofkolachi/tiw-dsm-repro/tree/main/checkpoints/deploy}}
+\newcommand{\dataURL}{\url{https://github.com/shaheer-geeksofkolachi/tiw-dsm-repro/tree/main/results}}
 
-% ---- experimental numbers ----------------------------------------------------
-\input{generated/defaults.tex}
-\IfFileExists{generated/numbers.tex}{\input{generated/numbers.tex}}{}
-
+\newcommand{\asset}[2][]{\includegraphics[#1]{figures/#2}}
+\newcommand{\lead}[1]{\textbf{\color{Ink}#1}\enspace}
+\input{generated/numbers.tex}
 \begin{document}
-
-% ================================ COVER ======================================
-\thispagestyle{plain}
-\vspace*{10mm}
-\begin{center}
-  {\large\color{Grey}MACHINE LEARNING -- FALL 2026\par}
-  \vspace{6mm}
-  {\fontsize{23}{28}\selectfont\bfseries\color{Navy}Deliverable 3: Final Report\par}
-  \vspace{5mm}
-  {\large\color{Grey}Reproduction and Deployment of\\[1mm]\textit{Training Unbiased Diffusion Models From Biased Dataset}\par}
-  \vspace{2mm}
-  {\normalsize\color{Grey}Time-dependent Importance Reweighting (TIW-DSM) on CIFAR-10 Long-Tail with 5\% reference data\par}
-\end{center}
+\thispagestyle{empty}
+{\sffamily\small\bfseries\color{Accent}MACHINE LEARNING \enspace\textbar\enspace FALL 2026 \enspace\textbar\enspace DELIVERABLE 3\par}
 \vspace{7mm}
-\begin{center}
-\begin{tabularx}{0.88\textwidth}{>{\color{Grey}\small}p{36mm}Y}
+{\Huge\bfseries\color{Ink}Learning a balanced image distribution from biased data\par}
+\vspace{2mm}
+{\large\color{Muted}Reproduction and deployment of \textit{Training Unbiased Diffusion Models From Biased Dataset}, Kim and colleagues, ICLR 2024 \cite{kim2024tiwdsm}.\par}
+\vspace{4mm}
+{\color{Rule}\hrule}
+\vspace{2mm}
+\begin{tabularx}{\linewidth}{@{}P{31mm}Y@{}}
+\textbf{Prepared by} & Syed Zain Afaq (36234), Shaheer Ahmed Farooqui (19722) and Huzaifa (19193)\\
+\textbf{Method} & Denoising score matching with importance weights that vary with diffusion time (TIW DSM).\\
+\textbf{Study setting} & Image generation on CIFAR 10. The biased sample contains 10,000 images and the reference sample contains 500.\\
+\textbf{Submission} & Final report, source code and trained model. Project freeze: 25 November 2026 at 23:55.\\
+\textbf{Report date} & 25 November 2026\\
+\end{tabularx}
+\vspace{3mm}
+\subsection*{What we found}
+At the same point in training, we asked two diffusion models to generate \resNimgtiw{} images each. The five classes least common in the biased data accounted for \resTailobs\% of the baseline output and \resTailtiw\% of the output from the proposed method. Their share in the target population is 50\%. The bias score also fell, from \resBiasobs{} to \resBiastiw{}. The gain in balance did not extend to overall image statistics: Fréchet Inception Distance (FID), for which lower is better, rose from \resFIDobs{} to \resFIDtiw{}, and recall fell. We therefore reproduced part of the finding of Kim and colleagues, not their improvement in FID. Each image model was trained once; both checkpoints represent 3,512,320 image exposures.
+\subsection*{Code, evidence and demonstration}
+\begingroup\small
+\begin{tabularx}{\linewidth}{@{}P{31mm}Y@{}}
 \toprule
-Selected paper & Kim et al., ICLR 2024 \cite{kim2024tiwdsm} \\ \midrule
-Area & Generative models -- diffusion models, dataset bias \\ \midrule
-Project setting & CIFAR-10 LT, $|\Dbias|=10{,}000$ (100.75:1 imbalance), $|\Dref|=500$ \\ \midrule
-Prepared by & Syed Zain Afaq -- 36234 \\
-            & Shaheer Ahmed Farooqui -- 19722 \\
-            & Huzaifa -- 19193 \\ \midrule
-Submission & Final Report, Source Code \& Trained Model (hard freeze 25 Nov 2026, 23:55) \\ \midrule
-Date & 25 November 2026 \\
+Implementation & \repoURL\\
+Trained weights & \weightsURL\quad \texttt{tiw\_dsm.pt} and \texttt{dsm\_obs.pt}\\
+Recorded results & \dataURL\quad Evaluation summaries and discriminator measurements; the archive does not contain every training log.\\
+Live application & \appURL\quad Streamlit Community Cloud, running on a CPU.\\
+Local demonstration & \texttt{python -m streamlit run app/streamlit\_app.py}\\
+Reproduction & Appendix~\ref{app:commands} gives the exact checkpoint paths. The repository guide and Kaggle notebook provide the general workflow.\\
+Report source & \texttt{main.tex}, \texttt{references.bib}, \texttt{generated/} and \texttt{figures/} accompany this document.\\
 \bottomrule
 \end{tabularx}
-\end{center}
-\vspace{5mm}
-\subsection*{Project artifacts (view and download without permission requests)}
-\begin{center}
-\begin{tabularx}{0.93\textwidth}{>{\bfseries\small}p{40mm}Y}
-\toprule
-Source code (GitHub) & \repoURL \\
-Trained weights & \weightsURL\ \ (\texttt{tiw\_dsm.pt}, \texttt{dsm\_obs.pt}; also in the Kaggle output of \texttt{tiw-dsm-eval}) \\
-Training / evaluation runs & \url{https://www.kaggle.com/code/shaheerfarooqui19722/tiw-dsm-train}, \url{https://www.kaggle.com/code/shaheerfarooqui19722/tiw-dsm-eval} \\
-Run everything & \texttt{README.md} and \texttt{notebooks/run\_on\_kaggle.ipynb} in the repository \\
-Launch the app & \texttt{streamlit run app/streamlit\_app.py} (Section~\ref{sec:deploy}) \\
-LaTeX source & \texttt{report/main.tex}, \texttt{report/references.bib} (bonus; Deliverable 2 was also in \LaTeX) \\
-\bottomrule
-\end{tabularx}
-\end{center}
-\callout{\textbf{Summary.} We re-implemented TIW-DSM in our own PyTorch code (time-dependent discriminator, reweighted and score-corrected objective, EDM sampler, evaluation suite, Streamlit app) and trained DSM(obs) and TIW-DSM on the authors' exact CIFAR-10 LT / 5\% files on free Kaggle GPUs, comparing both at the same 3.51M training images. \textbf{The debiasing claim reproduced:} the share of generated tail-class images rose from \resTailobs\% (DSM(obs)) to \resTailtiw\% (target 50\%), and the paper's Eq.~51 bias fell from \resBiasobs{} to \resBiastiw{} (\resBiasRed\% lower). \textbf{The FID improvement did not:} under our reduced compute TIW-DSM scored FID \resFIDtiw{} vs.\ \resFIDobs{} (paper: 11.51 vs.\ 12.99), with higher precision but lower recall. Our diagnostics point to an over-confident discriminator that gives almost zero weight to biased images at low noise. The additional experiment shows TIW-DSM keeps its lower bias at every sampling budget of 17 network evaluations or more.}
-
-\newpage
+\endgroup
+\clearpage
+\setcounter{tocdepth}{1}
+\begingroup
+\makeatletter
+\renewcommand*\l@section[2]{\addvspace{2.5pt}\@dottedtocline{1}{0pt}{1.9em}{\bfseries #1}{#2}}
+\makeatother
 \tableofcontents
+\endgroup
+\vspace{6mm}
+\begin{minipage}[t]{0.49\linewidth}\small
 \listoffigures
+\end{minipage}\hfill
+\begin{minipage}[t]{0.47\linewidth}\small
 \listoftables
-\newpage
+\end{minipage}
+\clearpage
 
-% ============================================================================
-\section{Introduction and Problem Statement}\label{sec:intro}
-% ============================================================================
-A generative model learns whatever distribution its training data come from. If the data were collected unevenly, the model faithfully reproduces that unevenness. For diffusion models this is a practical problem. Large image collections are shaped by where, how and by whom they were gathered \cite{torralba2011datasetbias}, so a model can produce realistic images while still getting the \emph{proportions} of what it generates wrong.
+\section{Introduction and problem statement}\label{sec:intro}
+A collection with 4,030 pictures of airplanes and only 40 pictures of trucks poses a particular problem for an image generator. An airplane can look convincing even if the model produces airplanes far too often. Looking at the image tells us about its appearance. Counting what the model generates tells us whether it has learned the proportions we wanted.
 
-Kim et al.\ \cite{kim2024tiwdsm} study the following setting. We have a large dataset $\Dbias$ drawn from an unknown biased distribution $\pbias$, and a small dataset $\Dref$ drawn from the distribution we actually want, $\pdata$. We know which set each image came from, but nothing else: no attribute labels and no description of the bias.
+Kim and colleagues \cite{kim2024tiwdsm} studied this problem with two sources of images. The large collection, $\Dbias$, comes from a biased distribution, $\pbias$. The smaller collection, $\Dref$, comes from the target distribution, $\pdata$. During training, the source of each image is known. The model is not told which class the image belongs to or how the large collection is biased. Training only on the large collection risks learning the wrong proportions. Training only on the small one gives the model little variety.
 
-\callout{\textbf{Problem statement.} Given a large biased set $\Dbias$ and a small unbiased reference set $\Dref$ ($|\Dref| \ll |\Dbias|$), train a diffusion model whose samples follow $\pdata$. Use the variety of $\Dbias$ without inheriting its bias, and without overfitting to the few images in $\Dref$.}
+Our target was the balanced training distribution of CIFAR 10 \cite{krizhevsky2009cifar}. In the biased sample, airplanes and automobiles together account for nearly two thirds of all images. The reference sample contains just 500 images, or 5\% of the size of the biased sample. Our question was whether a generator could use the variety in the larger collection while learning proportions closer to those of the smaller one.
 
-In our instance, $\Dbias$ is the authors' long-tailed CIFAR-10 split. It has 10{,}000 images with class counts falling from 4{,}030 (airplane) to 40 (truck), so airplanes and automobiles make up 64.5\% of it. $\Dref$ is a random 5\% reference set of 500 images that is close to class-balanced. The target is the balanced CIFAR-10 training distribution \cite{krizhevsky2009cifar}.
+We implemented denoising score matching (DSM) and the paper's method, which uses importance weights that vary with diffusion time (TIW DSM, or TIW below). We first checked the training objective in two dimensions. We then trained TIW and an ordinary DSM baseline on the authors' image files with a smaller network and a shorter comparison budget. In addition to measuring class balance and image statistics, we tested how the choice of numerical solver changes the speed and quality of generation. The application lets a user compare the trained models using the same starting noise or try denoising a photograph.
 
-\textbf{What this project delivers.}
-\begin{itemize}[leftmargin=5mm,itemsep=1pt,topsep=1pt]
-  \item A from-scratch implementation of TIW-DSM and its baselines. The objective is derived in EDM's denoiser form (Section~\ref{sec:method}) and checked on the paper's 2-D example (Section~\ref{sec:verify}).
-  \item A reduced-compute reproduction on the paper's exact CIFAR-10 LT / 5\% files, with every deviation listed and its expected effect stated (Table~\ref{tab:config}).
-  \item An evaluation that matches the paper's protocol: FID against the full unbiased training set, the paper's Eq.~51 bias metric with a VGG13-BN classifier, plus precision/recall and class shares (Section~\ref{sec:results}).
-  \item An additional experiment on the sampling budget (Section~\ref{sec:extra}), and a deployed Streamlit application (Section~\ref{sec:deploy}).
-\end{itemize}
+\section{Literature review and background}\label{sec:lit}
+\subsection{What a biased collection teaches a model}
+Torralba and Efros \cite{torralba2011datasetbias} showed how decisions about image collection leave recognisable differences between vision datasets. A classifier trained on one collection may struggle with another. For a generator, the consequence can be visible in the output frequencies themselves. Our biased sample has about 100 airplanes per truck; the target has equal numbers. A measure of visual realism alone cannot tell us whether the generated class proportions have moved closer to the target.
 
-% ============================================================================
-\section{Literature Review and Background}\label{sec:lit}
-% ============================================================================
-\textit{Carried over from Deliverable 2 and refined; changes are listed in Appendix~\ref{app:revisions}.}
-
-\subsection{Dataset bias in generative models}
-Dataset bias is a long-standing problem in vision. Each benchmark reflects choices about where and how images were collected \cite{torralba2011datasetbias}. Discriminative models inherit it as poor generalisation. Generative models inherit it more directly, because their output distribution \emph{is} the learned data distribution. In our data, a standard model sees 100 airplanes for every truck, and it is expected to generate them at roughly that rate. Visual quality alone cannot reveal this. One has to measure the distribution of generated content.
-
-\subsection{Diffusion models and denoising score matching}
-Diffusion models gradually corrupt data with Gaussian noise and learn to reverse the corruption \cite{ho2020ddpm,song2021sde}. The reverse process needs the \emph{score} $\nabla_{\mathbf{x}_t}\log p^t(\mathbf{x}_t)$ at every noise level. The score is unknown, so denoising score matching (DSM) \cite{vincent2011dsm} trains a network $\mathbf{s}_\theta$ to match the tractable conditional score $\nabla\log p(\mathbf{x}_t|\mathbf{x}_0)$. In expectation, this has the same minimiser as matching the true score:
+\subsection{What the denoiser learns}
+A diffusion model learns to remove Gaussian noise at a range of strengths \cite{ho2020ddpm,song2021sde}. The \emph{score} is the direction in which the logarithm of the probability density increases most rapidly at a noisy image $\mathbf{x}_t$. The true score is unknown. During training, however, we know how a clean image $\mathbf{x}_0$ was corrupted. Vincent \cite{vincent2011dsm} showed why matching this known conditional score gives the same optimum in expectation:
 \begin{equation}
-\mathcal{L}_{\mathrm{DSM}}(\theta;p)=\tfrac12\int_0^T\lambda(t)\,\mathbb{E}_{p(\mathbf{x}_0)}\mathbb{E}_{p(\mathbf{x}_t|\mathbf{x}_0)}\big\|\mathbf{s}_\theta(\mathbf{x}_t,t)-\nabla\log p(\mathbf{x}_t|\mathbf{x}_0)\big\|_2^2\,dt .
+\mathcal L_{\mathrm{DSM}}(\theta;p)=
+\tfrac12\int_0^T\lambda(t)\,
+\mathbb E_{p(\mathbf{x}_0)}\mathbb E_{p(\mathbf{x}_t|\mathbf{x}_0)}
+\big\|\mathbf s_\theta(\mathbf{x}_t,t)-\nabla\log p(\mathbf{x}_t|\mathbf{x}_0)\big\|_2^2\,dt .
 \end{equation}
-Its key weakness for our problem is that DSM learns whatever $p$ the samples come from. Trained on biased data, it learns the biased score. EDM \cite{karras2022edm} re-parameterises the model as a denoiser $D_\theta(\mathbf{x};\sigma)$ with $\mathbf{s}_\theta=(D_\theta-\mathbf{x})/\sigma^2$, together with preconditioning, a log-normal training-noise distribution and a 2nd-order Heun ODE sampler. Both the official TIW-DSM code and our implementation use this formulation.
+The distribution $p$ in this expression matters: training with biased images learns their score. Both implementations use the diffusion formulation of Karras and colleagues (EDM) \cite{karras2022edm}. It represents the score through a denoiser, $\mathbf s_\theta=(D_\theta-\mathbf x)/\sigma^2$, scales the network input and output according to the noise level, draws training noise strengths from a lognormal distribution and can generate images with the second order Heun solver.
 
-\subsection{Approaches before TIW-DSM}
-\textbf{DSM(ref): train on $\Dref$ only.} This targets the right distribution, but 500 images are far too few for a diffusion model. The model memorises and loses diversity \cite{kim2024tiwdsm}. Augmentation helps only partly \cite{karras2020ada}.
+\subsection{Three alternatives and their limitations}
+\lead{Train on the reference set: DSM(ref).} The source distribution is right, but 500 images contain few examples of each class. A model can memorise them and generate too little variety. Augmentation helps when data are scarce \cite{karras2020ada}, but it does not supply independent examples of the target population.
 
-\textbf{DSM(obs): train on everything.} Using $\Dobs=\Dbias\cup\Dref$ gives diversity but keeps the bias. The model converges to the observed mixture, not to $\pdata$.
+\lead{Train on both sources: DSM(obs).} Including the biased images gives the model more examples. Ordinary DSM then learns the observed mixture, $\pobs$, rather than the desired distribution. In our implementation, each source supplies half the training entries. Equal representation of the two sources is not the same as equal representation of the ten classes.
 
-\textbf{Importance reweighting (IW).} If the density ratio $w(\mathbf{x})=\pdata(\mathbf{x})/\pbias(\mathbf{x})$ were known, weighting each biased sample by $w$ would give an unbiased objective. Choi et al.\ \cite{choi2020fair} estimate $w$ with a probabilistic classifier that separates reference from biased samples: if $d(\mathbf{x})=P(\text{ref}\mid\mathbf{x})$ with balanced classes, then $w=d/(1-d)$. Plugged into DSM on clean data, this gives the \emph{IW-DSM} baseline.
+\lead{Weight clean images by their importance: IW DSM.} A biased example with density ratio $w(\mathbf x)=\pdata(\mathbf x)/\pbias(\mathbf x)$ represents more target examples when this ratio is large. Choi and colleagues \cite{choi2020fair} estimated that ratio by training a classifier to distinguish the two sources. Given equally likely sources and an optimal probability $d$ of belonging to the reference source, the ratio is $d/(1-d)$. Using an estimate of this clean image ratio gives the importance weighted DSM baseline.
 
-\subsection{Density-ratio estimation and the density chasm}
-Classifier-based density-ratio estimation \cite{sugiyama2012dre} is accurate only when the two distributions overlap. When they are far apart, for example high-dimensional images with a small reference set, a classifier separates them almost perfectly. Its probabilities then saturate and the implied ratio is badly estimated. This is the \emph{density-chasm} problem \cite{rhodes2020tre}. Telescoping ratio estimation bridges the chasm through intermediate distributions. The diffusion forward process naturally provides such a bridge, and this is the observation TIW-DSM is built on.
+\subsection{Why estimate the ratio after adding noise?}
+A classifier estimates density ratios reliably only if its probabilities are informative in regions shared by both distributions \cite{sugiyama2012dre}. Where the sources are easy to distinguish, a nearly certain prediction can be useful for classification but a poor estimate of the odds. Rhodes and colleagues \cite{rhodes2020tre} described this difficulty as a density chasm and used intermediate distributions to bridge it. Diffusion already provides a sequence of intermediate distributions: as noise increases, differences between the sources become less pronounced.
 
-\subsection{Positioning of TIW-DSM}
-TIW-DSM \cite{kim2024tiwdsm} (i) estimates the ratio between the \emph{perturbed} distributions $\pdata^t/\pbias^t$ at every diffusion time, where they overlap more and the estimate is easier, and (ii) uses it twice: as a sample weight, and through its gradient as a correction to the score. It reuses the time-dependent discriminator design of Discriminator Guidance \cite{kim2023dg}, built on a pretrained ADM encoder \cite{dhariwal2021adm}. In the paper's 2-D experiment, the integrated error of the time-dependent ratio was only 39.1\% of the time-independent error. Table~\ref{tab:paperfid} recalls the reported CIFAR-10 LT results that we try to reproduce.
-
-\begin{table}[H]
-\centering
-\caption{Reported CIFAR-10 LT FID-50k (lower is better) for different reference-set sizes \cite{kim2024tiwdsm}. Our project targets the 5\% column. These are the \emph{authors'} results.}
-\label{tab:paperfid}
-\begin{tabular}{lrrrr}
-\toprule
-Method & 5\% & 10\% & 25\% & 50\% \\ \midrule
-DSM(ref) & 16.47 & 11.56 & 10.77 & 5.19 \\
-DSM(obs) & 12.99 & 10.75 & 8.45 & 7.35 \\
-IW-DSM   & 15.79 & 11.45 & 8.19 & 4.28 \\
-\textbf{TIW-DSM} & \textbf{11.51} & \textbf{8.08} & \textbf{5.59} & \textbf{4.06} \\
-\bottomrule
+Kim and colleagues estimated the ratio at each noise level and used both its value and its gradient during training. Their discriminator builds on the design used for discriminator guidance \cite{kim2023dg} and a pretrained ADM image encoder \cite{dhariwal2021adm}. In their experiment in two dimensions, the integrated error of the ratio estimated across noise levels was 39.1\% of the error from an estimate that ignored time. Their image results give a separate benchmark. Our project addresses only the first column of Table~\ref{tab:paperfid}.
+\begin{table}[H]\centering
+\caption[Published image results]{FID reported by Kim and colleagues for the long tailed CIFAR 10 dataset, using 50,000 generated images \cite{kim2024tiwdsm}. Columns give the size of the reference set relative to the biased set. Lower values are better.}\label{tab:paperfid}
+\small\begin{tabular}{lrrrr}\toprule
+Method & 5\% & 10\% & 25\% & 50\%\\\midrule
+DSM(ref) & 16.47 & 11.56 & 10.77 & 5.19\\
+DSM(obs) & 12.99 & 10.75 & 8.45 & 7.35\\
+IW DSM & 15.79 & 11.45 & 8.19 & 4.28\\
+TIW DSM & \textbf{11.51} & 8.08 & 5.59 & 4.06\\\bottomrule
 \end{tabular}
 \end{table}
 
-% ============================================================================
-\section{Paper Methodology}\label{sec:method}
-% ============================================================================
-This section explains the method in our own words and derives the exact form we implement.
 
-\subsection{Why make the density ratio time-dependent?}
-The forward diffusion maps both $\pbias$ and $\pdata$ through the same Gaussian blurring kernel, giving $\pbias^t$ and $\pdata^t$. As $t$ grows the two become smoother and overlap more, and at $t=T$ both are the same Gaussian. A classifier that sees noisy images therefore faces an easier problem at larger $t$. Its probabilities are less saturated and the ratio $w^t=\pdata^t/\pbias^t$ is better calibrated. The diffusion model needs the score at \emph{every} $t$ anyway, so it is natural to use the ratio at the same $t$ instead of the clean-data ratio $w^0$.
+\section{Methodology of the selected paper}\label{sec:method}
+\subsection{Learning to distinguish the two sources}
+Both sources undergo the same Gaussian corruption. Their noisy distributions, $\pbias^t$ and $\pdata^t$, overlap more as the noise level rises and approach the same Gaussian limit. This makes estimating their ratio easier in principle. It does not ensure that a trained classifier returns accurate probabilities.
 
-\subsection{Time-dependent discriminator}
-A discriminator $d_\phi(\mathbf{x}_t,t)$ is trained with binary cross-entropy to tell noisy reference samples (label 1) from noisy biased samples (label 0), drawing both in equal numbers at random diffusion times:
+At each sampled diffusion time $t$, the discriminator $d_\phi(\mathbf x_t,t)$ receives equal numbers of noisy images from each source. Its task is to distinguish a reference image (label 1) from a biased image (label 0). These are source labels, not object classes. The discriminator minimises binary cross entropy:
 \begin{equation}
-\mathcal{L}_{\mathrm{disc}}(\phi)=-\mathbb{E}_t\Big[\mathbb{E}_{\pdata^t}\log d_\phi(\mathbf{x}_t,t)+\mathbb{E}_{\pbias^t}\log\big(1-d_\phi(\mathbf{x}_t,t)\big)\Big].
+\mathcal L_{\mathrm{disc}}(\phi)=-\mathbb E_t\!
+\left[\mathbb E_{\pdata^t}\log d_\phi(\mathbf x_t,t)+
+\mathbb E_{\pbias^t}\log\big(1-d_\phi(\mathbf x_t,t)\big)\right].
 \end{equation}
-The optimum is $d^*=\pdata^t/(\pdata^t+\pbias^t)$, hence $w^t=d^*/(1-d^*)$.
+With equal source probabilities, the optimum is
+$d^*=\pdata^t/(\pdata^t+\pbias^t)$. The target to biased density ratio at that noise level is therefore $w^t=d^*/(1-d^*)$.
 
-\subsection{The TIW-DSM objective}
-TIW-DSM weights the DSM loss by $w^t(\mathbf{x}_t)$ and also shifts the regression target by $\nabla\log w^t$:
+\clearpage
+\subsection{Two different jobs for the same ratio}
+Equation 10 of the paper \cite{kim2024tiwdsm} uses $w^t$ to change how much each example counts and $\nabla\log w^t$ to change the target that the network learns. Written for images sampled from the biased source, the objective is
 \begin{equation}\label{eq:tiw}
-\mathcal{L}_{\mathrm{TIW}}=\tfrac12\int_0^T\lambda(t)\,\mathbb{E}_{\pbias(\mathbf{x}_0)}\mathbb{E}_{p(\mathbf{x}_t|\mathbf{x}_0)}
-\Big[w^t(\mathbf{x}_t)\big\|\mathbf{s}_\theta(\mathbf{x}_t,t)-\nabla\log p(\mathbf{x}_t|\mathbf{x}_0)-\nabla\log w^t(\mathbf{x}_t)\big\|_2^2\Big]dt .
+\begin{aligned}
+\mathcal L_{\mathrm{TIW}}={}&\tfrac12\int_0^T\lambda(t)\,
+\mathbb E_{\pbias(\mathbf x_0)}\mathbb E_{p(\mathbf x_t|\mathbf x_0)}
+\Big[w^t(\mathbf x_t)\\[-.3ex]
+&{}\cdot\big\|\mathbf s_\theta(\mathbf x_t,t)
+-\nabla\log p(\mathbf x_t|\mathbf x_0)-\nabla\log w^t(\mathbf x_t)\big\|_2^2\Big]\,dt .
+\end{aligned}
 \end{equation}
-\begin{theorem}[Kim et al.\ \cite{kim2024tiwdsm}, Thm.~1]
-With the exact ratio, $\mathcal{L}_{\mathrm{TIW}}(\theta;\pbias,w^t)=\mathcal{L}_{\mathrm{SM}}(\theta;\pdata)+C$, where $C$ does not depend on $\theta$. The minimiser is therefore the score of the \emph{unbiased} distribution.
-\end{theorem}
-\textbf{Intuition (our sketch).} Two facts make this work. First, $w^t\pbias^t=\pdata^t$, so the weight turns an expectation under the biased marginal into one under the target marginal. Second, $\nabla\log\pdata^t=\nabla\log\pbias^t+\nabla\log w^t$, and DSM on biased samples already supplies $\nabla\log\pbias^t$ in expectation. Adding $\nabla\log w^t$ to the target supplies the missing part. Expanding the square and taking the conditional expectation over $\mathbf{x}_0$ given $\mathbf{x}_t$ turns the objective into score matching against $\nabla\log\pdata^t$ under $\pdata^t$.
+Theorem 1 in the paper states that, with the \emph{exact} ratio, this objective equals score matching on $\pdata$ up to a constant that does not depend on $\theta$. There are two reasons. First, $w^t\pbias^t=\pdata^t$: weighting changes the distribution used to average the loss. Second, $\nabla\log\pdata^t=\nabla\log\pbias^t+\nabla\log w^t$: the gradient supplies the part of the target score that ordinary DSM misses. Taking the conditional expectation over the original clean image at fixed $\mathbf x_t$ gives this target score. The theorem concerns the exact ratio, not the clipped estimate from our discriminator.
 
-\subsection{Why both terms are needed}\label{sec:whyboth}
-This point became clear to us during implementation and is easy to miss. Look at the per-$\mathbf{x}_t$ minimiser of a weighted DSM loss $\mathbb{E}[\,w(\mathbf{x}_t)\|\mathbf{s}-\mathbf{y}\|^2]$ with $\mathbf{y}=\nabla\log p(\mathbf{x}_t|\mathbf{x}_0)$. Because the weight depends only on $\mathbf{x}_t$, it factors out of the conditional expectation, and the minimiser is still $\mathbb{E}[\mathbf{y}\mid\mathbf{x}_t]=\nabla\log\pbias^t$.
-\begin{itemize}[leftmargin=5mm,itemsep=1pt,topsep=1pt]
-\item \textbf{Weighting only (W):} with infinite capacity it still learns the \emph{biased} score. A time-dependent weight only redistributes model capacity and gradient variance across $\mathbf{x}_t$.
-\item \textbf{Correction only (C):} the minimiser is $\nabla\log\pbias^t+\nabla\log w^t=\nabla\log\pdata^t$, which is consistent. However, every region keeps its biased share of training signal.
-\item \textbf{W + C (TIW-DSM):} consistent, and it also spends model capacity in proportion to the target density.
-\end{itemize}
-This matches the paper's ablation at 5\% (Table~4 in \cite{kim2024tiwdsm}): none 12.99, W only 13.27, C only 11.62, both 11.51 FID. It also matches our 2-D check (Section~\ref{sec:verify}).
+\subsection{What happens if one term is removed?}\label{sec:whyboth}
+Fix the noisy image $\mathbf x_t$. Every clean image that could have produced it receives the same weight $w(\mathbf x_t)$. Multiplying the conditional squared error by this number does not change its minimiser. With sufficient capacity, \emph{weighting alone} therefore still learns the biased conditional mean $\mathbb E[\nabla\log p(\mathbf x_t|\mathbf x_0)\mid\mathbf x_t]=\nabla\log\pbias^t$. It can change the relative training effort and the variation in gradients across noisy images.
 
-\subsection{Practical form used in the paper and in our code}\label{sec:practical}
-\textbf{Training on $\Dobs$.} The authors train the score model on $\Dobs=\Dbias\cup\Dref$, with $\Dref$ repeated so that the two sources are 1:1. The sampling distribution is then $\pobs=\tfrac12\pbias+\tfrac12\pdata$, and the required ratio becomes (paper Eq.~36)
+With the exact ratio, \emph{correction alone} targets the desired score, but the frequency with which regions contribute to training still follows the biased data. Using both terms changes the target and the relative contribution of each region. The authors tested these alternatives at the 5\% setting. FID was 12.99 without either term, 13.27 with weighting alone, 11.62 with correction alone and 11.51 with both \cite{kim2024tiwdsm}. Section~\ref{sec:verify} describes our smaller test of the same distinction.
+
+\subsection{The objective used in our implementation}\label{sec:practical}
+Our denoiser trains on both sources. Repeating each reference image 20 times gives an equal mixture, $\pobs=\tfrac12\pbias+\tfrac12\pdata$. The denominator of the required ratio is now the \emph{mixture}, not the biased source. Equation 36 of the paper gives
 \begin{equation}
-\tilde w^t=\frac{\pdata^t}{\pobs^t}=\frac{2w^t}{1+w^t}=2\,d_\phi(\mathbf{x}_t,t),\qquad \nabla\log\tilde w^t=\nabla\log d_\phi(\mathbf{x}_t,t).
+\tilde w^t=\frac{\pdata^t}{\pobs^t}
+=\frac{2w^t}{1+w^t}=2d^*, \qquad
+\nabla\log\tilde w^t=\nabla\log d^* .
 \end{equation}
-The weight is bounded in $(0,2)$, which keeps training stable. The weight is not $d/(1-d)$, which can explode.
+This is why the implementation uses $2d$ rather than the odds $d/(1-d)$ when training the generator. The weight lies between 0 and 2. A bounded weight is useful, but is not enough to ensure stable training or an unbiased result.
 
-\textbf{EDM denoiser form (our derivation).} With $\mathbf{x}=\mathbf{y}+\sigma\mathbf{n}$, $\mathbf{s}_\theta=(D_\theta-\mathbf{x})/\sigma^2$ and $\nabla\log p(\mathbf{x}|\mathbf{y})=(\mathbf{y}-\mathbf{x})/\sigma^2$, the TIW integrand becomes
+For a clean image $\mathbf y$, let $\mathbf x=\mathbf y+\sigma\mathbf n$ with standard Gaussian noise $\mathbf n$. The conditional score is $(\mathbf y-\mathbf x)/\sigma^2$ and the EDM model predicts $(D_\theta-\mathbf x)/\sigma^2$. Substitution into Equation~\ref{eq:tiw}, now using the mixture ratio, gives the following denoiser expression:
 \begin{equation}\label{eq:edmtiw}
-\frac{\tilde w}{\sigma^4}\Big\|D_\theta(\mathbf{x};\sigma)-\big(\mathbf{y}+\sigma^2\,\nabla_{\mathbf{x}}\log d_\phi(\mathbf{x},\sigma)\big)\Big\|_2^2 .
+\frac{\tilde w}{\sigma^4}
+\left\|D_\theta(\mathbf x;\sigma)-
+\left(\mathbf y+\sigma^2\nabla_{\mathbf x}\log d_\phi(\mathbf x,\sigma)\right)\right\|_2^2 .
 \end{equation}
-So TIW-DSM is ordinary EDM training with a \emph{per-sample weight} $2d_\phi$ and a \emph{shifted target} $\mathbf{y}+\sigma^2\nabla\log d_\phi$. We keep EDM's weighting $\lambda(\sigma)=(\sigma^2+\sigma_d^2)/(\sigma\sigma_d)^2$ (the time weighting is a free choice and does not affect consistency). The discriminator lives in VP space, so an EDM sample is converted with $\alpha=1/\sqrt{1+\sigma^2}$, $\mathbf{x}_{\mathrm{VP}}=\alpha\mathbf{x}$, and the VP time $\tau$ that solves $\alpha(\tau)=\alpha$. The gradient is taken with respect to the EDM-space $\mathbf{x}$, so the chain-rule factor $\alpha$ is included automatically.
+The usual clean target $\mathbf y$ has become $\mathbf y+\sigma^2\nabla_{\mathbf x}\log d_\phi$. We retain the EDM noise weighting $\lambda(\sigma)=(\sigma^2+\sigma_d^2)/(\sigma\sigma_d)^2$; the theoretical objective allows a choice of time weighting. The discriminator expects variance preserving (VP) coordinates. We set $\alpha=1/\sqrt{1+\sigma^2}$, pass it $\alpha\mathbf x$, and choose VP time $\tau$ so that $\alpha(\tau)=\alpha$. Differentiating with respect to the original $\mathbf x$ includes the factor $\alpha$ from the chain rule.
 
-\textbf{Inference.} The discriminator is used \emph{only during training}. At sampling time TIW-DSM is a plain diffusion model, so it adds no inference cost.
+\lead{Numerical safeguards.} We used $\bar d=\mathrm{clip}(d_\phi,10^{-5},1-10^{-5})$ before taking the logarithm. The weight is $2\bar d$; the correction uses $\nabla_{\mathbf x}\log\bar d$. Both are detached before the generator update. Outside the clipping interval, the derivative through the clamp is zero. A very small raw probability therefore does not imply a large correction in our code. We also apply \texttt{torch.nan\_to\_num} to the input gradient, handle nonfinite generator gradients before the optimiser step and use automatic mixed precision. We did not run separate experiments to measure the effects of these choices.
 
-\begin{algorithm}[H]
-\caption{TIW-DSM training as implemented (two stages)}\label{alg:tiw}
-\SetKwInOut{Input}{Input}
-\Input{$\Dbias$, $\Dref$, frozen ADM feature extractor, denoiser $D_\theta$}
-\tcp{Stage 1: time-dependent discriminator}
-\For{$k=1,\dots,10{,}000$}{
-  draw $B$ images from $\Dref$ (label 1) and $B$ from $\Dbias$ (label 0); draw $\tau$ by importance sampling\;
-  $\mathbf{x}_\tau=\alpha(\tau)\mathbf{x}_0+\sqrt{1-\alpha(\tau)^2}\,\mathbf{z}$; \ update the head $\phi$ with BCE on $d_\phi(\mathbf{x}_\tau,\tau)$\;
-}
-freeze $\phi$\;
-\tcp{Stage 2: score model on $\Dobs=\Dbias\cup 20\times\Dref$}
-\While{trained images $<$ budget}{
-  $\mathbf{y}\sim\Dobs$ (random x-flip), $\ln\sigma\sim\mathcal{N}(-1.2,1.2^2)$, $\mathbf{x}=\mathbf{y}+\sigma\mathbf{n}$\;
-  $d=\mathrm{clip}(d_\phi(\alpha\mathbf{x},\tau(\sigma)),10^{-5},1-10^{-5})$, \ $\mathbf{g}=\nabla_{\mathbf{x}}\log d$ \tcp*{no gradient to $\phi$}
-  $\mathcal{L}=\lambda(\sigma)\,2d\,\big\|D_\theta(\mathbf{x};\sigma)-(\mathbf{y}+\sigma^2\mathbf{g})\big\|^2$; \ Adam step on $\theta$; EMA update\;
-}
-\end{algorithm}
+\begin{figure}[H]\centering
+\fcolorbox{Rule}{Pale}{\begin{minipage}{0.94\linewidth}\small
+\lead{First, train the discriminator head.}
+\begin{enumerate}
+\item For each of 10,000 updates, draw 128 images from each source. Assign labels 1 and 0 to the reference and biased images respectively. Draw VP times by importance sampling and draw Gaussian noise $\mathbf z$.
+\item Form $\mathbf x_\tau=\alpha(\tau)\mathbf x_0+\sqrt{1-\alpha(\tau)^2}\,\mathbf z$. Use binary cross entropy to update the head. The pretrained ADM feature extractor remains fixed.
+\end{enumerate}
+\lead{Next, fix the discriminator and train the denoiser.}
+\begin{enumerate}
+\item Sample $\mathbf y$ from $\Dobs$, apply a random horizontal flip, and sample $\ln\sigma\sim\mathcal N(-1.2,1.2^2)$. Form $\mathbf x=\mathbf y+\sigma\mathbf n$.
+\item Evaluate the clipped $d$ at $(\alpha\mathbf x,\tau(\sigma))$. Compute $\mathbf g=\mathrm{nan\_to\_num}(\nabla_{\mathbf x}\log d)$ and detach both $d$ and $\mathbf g$.
+\item Minimise $\lambda(\sigma)\,2d\,\|D_\theta(\mathbf x;\sigma)-(\mathbf y+\sigma^2\mathbf g)\|^2$, averaging over examples and pixels. Scale the loss for backpropagation, check the gradients and update the denoiser with Adam. Maintain an exponential moving average (EMA) of its weights.
+\end{enumerate}
+\end{minipage}}
+\caption[Training procedure]{The discriminator supplies a training signal. Generating an image later requires only the trained denoiser and a sampler.}\label{alg:tiw}
+\end{figure}
 
-% ============================================================================
-\section{Implementation Details}\label{sec:impl}
-% ============================================================================
-\subsection{Code structure}
-The code is a small Python package (\texttt{tiwdsm/}) plus scripts, organised so that each stage of the pipeline can be run and verified separately:
-\begin{center}
-\small
-\begin{tabularx}{\textwidth}{>{\ttfamily}p{44mm}Y}
-\toprule
-tiwdsm/data.py & loads the official NPZ arrays, builds $\Dobs$ (bias + 20$\times$ ref), $[-1,1]$ normalisation, x-flip \\
-tiwdsm/unet.py & compact DDPM++-style U-Net (presets \texttt{tiny/small/base}) \\
-tiwdsm/edm.py & EDM preconditioning, $\sigma$ sampling, loss weight, Heun/Euler sampler, EMA \\
-tiwdsm/vpsde.py & EDM $\sigma$ $\leftrightarrow$ VP time, importance time sampling \\
-tiwdsm/discriminator.py & ADM-encoder discriminator, $\tilde w=2d$, $\nabla\log d$, IW clean weight \\
-tiwdsm/losses.py & DSM(obs/ref), IW-DSM, TIW-DSM and the W-only / C-only ablations (Eq.~\ref{eq:edmtiw}) \\
-tiwdsm/metrics.py & FID, precision/recall, Eq.~51 bias, class-share metrics \\
-scripts/ & \texttt{prepare\_data}, \texttt{train\_discriminator}, \texttt{train\_score}, \texttt{evaluate}, \texttt{steps\_experiment}, \texttt{toy\_2d}, \texttt{make\_report\_assets} \\
-app/streamlit\_app.py & deployment \\
-\bottomrule
-\end{tabularx}
-\end{center}
-
-\subsection{Architecture}
-\textbf{Score network.} An EDM-preconditioned U-Net that we wrote ourselves, following the DDPM++ design: residual blocks with GroupNorm/SiLU, an additive noise embedding from a positional encoding of $c_{\mathrm{noise}}=\tfrac14\ln\sigma$ through a 2-layer MLP, self-attention at $16\times16$ and in the bottleneck, $\sqrt{1/2}$ skip scaling, zero-initialised output layers and dropout 0.13. Our default \texttt{small} preset (64 base channels, multipliers 1-2-2-2, 2 blocks per level) has \resParams M parameters. The paper's DDPM++ has $\approx$56M; our \texttt{base} preset reproduces that size (53.6M) if more compute is available.
-
-\textbf{Discriminator.} Same architecture as the paper: a \emph{frozen} pretrained ADM classifier encoder (the authors' \texttt{32x32\_classifier.pt}, 47.8M parameters) maps the noisy image to $8\times8\times512$ features. A shallow ADM encoder head (depth 2, width 128, attention pooling, 2.9M trainable parameters) outputs a logit. Time enters both networks through their timestep embeddings ($999\tau$). A small from-scratch CNN backbone is provided as a documented fallback.
-
-\subsection{Training configuration: original vs.\ reproduced}
-\begin{table}[H]
-\centering
-\caption{Original configuration (paper / official command) vs.\ our reproduction, with the expected effect of each deviation.}
-\label{tab:config}
-\small
-\begin{tabularx}{\textwidth}{p{30mm}p{37mm}p{37mm}Y}
-\toprule
-Item & Original & Ours & Expected effect \\ \midrule
-Hardware & 4$\times$ RTX 4090 & 2$\times$ \resStepsDevice{} (free Kaggle; one GPU per model, in parallel) & time only \\
-Score network & DDPM++, 56M & DDPM++-style, \resParams M & less capacity; higher absolute FID for \emph{both} methods \\
-Batch / lr & 256 / $10^{-3}$, 10 Mimg ramp-up & 256 (TIW: 2$\times$128 micro-batches, GPU memory) / $10^{-3}$, 10 Mimg ramp-up & same effective batch \\
-Duration & 11 Mimg & TIW-DSM \resMimgtiw{} Mimg (12-h session limit); DSM(obs) \resMimgobs{} Mimg. \textbf{Compared at 3.51 Mimg} (same checkpoint length for both) & under-trained: higher FID; learning rate only reached 35\% of its peak \\
-EMA / dropout & 0.5 Mimg / 0.13 & 0.5 Mimg / 0.13 & same \\
-Augmentation & EDM pipeline, $p=0.12$ & horizontal flip only & more memorisation risk on 10.5k unique images \\
-Precision & fp32 & fp16 autocast + loss scaling & small numerical noise \\
-Discriminator & ADM features + head, 10k it., batch 128+128 & same; lr $3\cdot10^{-4}$ (official script default); \resDiscMinutes{} min on T4 & same \\
-Correction term & code: from $\nabla d$ & from $\nabla\log d$ (paper Eq.~10/36) & follows the paper's equation exactly \\
-FID & EDM \texttt{fid.py}, 50k vs.\ CIFAR-10 train & \texttt{pytorch-fid} (same TF Inception weights), 50k vs.\ all 50k train images & small constant offset possible \\
-Sampler & EDM Heun, 18 steps (35 NFE) & identical & same \\
-Bias classifier & VGG13-BN & VGG13-BN (\cite{chenyaofo2021cifar}), test acc.\ \resClfAcc\% & same \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-All design choices that are not compute-driven follow the official code (checked line by line against the released \texttt{train.py}, \texttt{train\_classifier.py} and \texttt{loss.py}). The only intentional methodological difference is the correction term. The released \texttt{classifier\_lib.get\_weight\_correction} differentiates the discriminator \emph{probability} $d$, whereas the paper's objective uses the gradient of the \emph{log} ratio. We implement the paper's form and list this as an implementation difference rather than a claim about which is better.
-
-\subsection{Environment and dependencies}
+\section{Implementation and attribution}\label{sec:impl}
+\subsection{Organisation of the code}
+We kept data preparation, training and evaluation separate so that a fault in one stage could be tested without repeating the rest. The library is in \texttt{tiwdsm/}; the scripts call the library.
 \begin{center}\small
-\begin{tabularx}{\textwidth}{lY}
-\toprule
-Language / framework & Python 3.10+, PyTorch $\ge$ 2.1 \cite{paszke2019pytorch} (CUDA for training; CPU works for inference) \\
-Training hardware & Kaggle GPU T4 $\times$2 (15 GB each); one 11.3-h session for both models, one 3-h session for evaluation \\
-Main packages & numpy, scipy, pillow, pyarrow, gdown, pytorch-fid 0.3.0 \cite{seitzer2020pytorchfid}, matplotlib, streamlit \cite{streamlit} \\
-Pinned list & \texttt{requirements.txt} in the repository \\
-Seeds & training seed 0; evaluation image $k$ uses noise seed $k$ (identical across models) \\
-\bottomrule
-\end{tabularx}
-\end{center}
+\begin{tabularx}{\linewidth}{@{}P{43mm}Y@{}}\toprule
+Location & Responsibility\\\midrule
+\texttt{tiwdsm/data.py} & Read the authors' arrays, assemble the observed mixture, scale pixels and apply horizontal flips.\\
+\texttt{tiwdsm/unet.py} & Define the denoising network and its \texttt{tiny}, \texttt{small} and \texttt{base} sizes.\\
+\texttt{tiwdsm/edm.py} & Set EDM scaling, draw noise strengths, weight the loss, sample with Heun or Euler and maintain EMA weights.\\
+\texttt{tiwdsm/vpsde.py} & Convert EDM noise strengths to VP time and sample times by importance.\\
+\texttt{tiwdsm/discriminator.py} & Estimate the source probability, the mixture weight $2d$, the gradient $\nabla\log d$ and the clean image weight for IW.\\
+\texttt{tiwdsm/losses.py} & Implement DSM on either dataset, IW, TIW and the variants that omit weighting or correction.\\
+\texttt{tiwdsm/metrics.py} & Compute FID, precision, recall, bias and the share of each class.\\
+\texttt{scripts/} & Prepare data, train the discriminator and denoiser, evaluate models, run the sampling and toy experiments and produce report figures.\\
+\texttt{app/streamlit\_app.py} & Load the deployment weights and run the interactive demonstration.\\\bottomrule
+\end{tabularx}\end{center}
 
-\subsection{Code and result attribution}\label{sec:attrib}
-\begin{table}[H]
-\centering
-\caption{Attribution of code and results, following the four categories required by the guidelines.}
-\label{tab:attrib}
-\small
-\begin{tabularx}{\textwidth}{p{40mm}Y}
-\toprule
-\textbf{(a) Implemented by our team} & U-Net (\texttt{unet.py}); TIW/IW/DSM losses and ablations derived in EDM form (\texttt{losses.py}); discriminator wrapper and ratio/gradient computation (\texttt{discriminator.py}); data pipeline and label recovery (\texttt{data.py}); all training loops (resume, time limit, EMA, AMP); evaluation suite including our own Fréchet distance (robust to new SciPy) and $k$-NN precision/recall; 2-D toy; sampling-step experiment; report-asset generator; Streamlit app. \\ \midrule
-\textbf{(b) Adapted from existing code} & EDM formulas (preconditioning, noise distribution, Heun sampler, EMA rule) re-written from \cite{karras2022edm}; VP-SDE conversion and importance time sampling from the official \texttt{classifier\_lib.vpsde} \cite{tiwdsmcode}; discriminator training settings from the official \texttt{train\_classifier.py}. \\ \midrule
-\textbf{(c) Reused directly} & \texttt{third\_party/guided\_diffusion/} (OpenAI ADM encoder, copied unchanged from the official repo except one unused import); authors' pretrained \texttt{32x32\_classifier.pt}; authors' data files; \texttt{pytorch-fid} Inception network; pretrained VGG13-BN from \cite{chenyaofo2021cifar}. We did \emph{not} run the official training or sampling scripts. \\ \midrule
-\textbf{(d) Authors' vs.\ our results} & Every number from the paper is labelled ``paper'' or ``reported'' (Tables~\ref{tab:paperfid}, \ref{tab:main}). Every other number in Sections~\ref{sec:verify}, \ref{sec:results} and \ref{sec:extra} was produced by our code and is inserted automatically from the JSON result files. \\
-\bottomrule
-\end{tabularx}
-\end{table}
+\subsection{Denoiser and discriminator}
+We wrote a compact U shaped network following the DDPM++ design. Residual blocks use group normalisation and SiLU activations. A two layer perceptron maps a positional encoding of $c_{\rm noise}=\tfrac14\ln\sigma$ to an additive noise embedding. The network uses attention at $16\times16$ resolution and at the bottleneck, scales skip connections by $\sqrt{1/2}$, initialises the output layers to zero and uses a dropout rate of 0.13. The \texttt{small} model has 64 base channels, channel multipliers $(1,2,2,2)$ and two blocks per level, for a total of 8,952,067 parameters. The paper used approximately 56 million. Our \texttt{base} preset has 53.6 million, but we did not train it or treat it as an exact copy of the larger architecture.
 
-\subsection{Verification before the expensive runs}\label{sec:verify}
-\textbf{End-to-end smoke test.} Before using GPU time, every script was run on CPU with a synthetic dataset of the same file layout and a 0.7M-parameter U-Net. This covered data preparation, discriminator, both score objectives, resume-from-checkpoint, evaluation, the steps experiment, report generation, and the app in headless mode.
+For the discriminator we used the authors' pretrained ADM encoder, \texttt{32x32\_classifier.pt}. Its 47.8~million fixed parameters map a noisy image to an $8\times8\times512$ feature array. A second encoder with depth 2, width 128 and attention pooling maps these features to one source logit. Only its 2.9 million parameters are trained. Embeddings supply VP time. We also implemented a small convolutional network as an alternative feature extractor; none of the reported image results use it.
 
-\textbf{2-D sanity check of the objective.} We re-created the paper's toy problem: $\pbias=0.9\,\mathcal{N}((-2,-2),I)+0.1\,\mathcal{N}((2,2),I)$, $\pdata=$ equal mixture, $|\Dbias|=10{,}000$, $|\Dref|=500$. The test runs \emph{the same} loss, discriminator conversion and sampler code used for images, with small MLPs. The quantity of interest is the share of samples in the $(2,2)$ mode (target 0.50). Training on $\Dobs$ without correction should give about $0.3$ (half of the batch is biased).
-
-\begin{table}[H]
-\centering
-\caption{2-D sanity check (our results, mean $\pm$ std over 3 seeds, 20k samples each). Share of samples in the minority mode; target 0.500.}
-\label{tab:toy}
-\small\begin{tabular}{lcccccc}
-\toprule
- & DSM(ref) & DSM(obs) & IW-DSM & TIW: W only & TIW: C only & \textbf{TIW-DSM} \\ \midrule
-Mode share & \resToyref{\scriptsize$\pm$\resToyStdref} & \resToyobs{\scriptsize$\pm$\resToyStdobs} & \resToyiw{\scriptsize$\pm$\resToyStdiw} & \resToytiwW{\scriptsize$\pm$\resToyStdtiwW} & \resToytiwC{\scriptsize$\pm$\resToyStdtiwC} & \textbf{\resToytiw}{\scriptsize$\pm$\resToyStdtiw} \\
-\bottomrule
-\end{tabular}
-\end{table}
-\begin{figure}[H]
-\centering
-\fig{toy_2d.png}{2-D samples per method (scripts/toy\_2d.py)}
-\caption{2-D sanity check (seed 0). DSM(obs) and ``W only'' stay biased toward the large mode. Adding score correction moves mass back toward the 50/50 target.}
-\label{fig:toy}
-\end{figure}
-DSM(obs) lands at \resToyobs, close to its predicted 0.3, and ``W only'' (\resToytiwW) does not move it, exactly as Section~\ref{sec:whyboth} predicts. Adding the score correction moves the share to \resToytiwC{} (C only) and \resToytiw{} (TIW-DSM). The correction is therefore the term that removes the bias, with consistent signs and scales in our implementation. Two observations keep this honest. First, TIW-DSM closes most but not all of the gap to 0.5; the remainder reflects estimation error in the learned ratio, since the optimum is only guaranteed for the exact ratio. Second, in 2-D, IW-DSM (\resToyiw) and DSM(ref) (\resToyref) do as well or better. The two Gaussian mixtures overlap at $t=0$, so there is no density chasm for the time-dependent ratio to bridge, and 500 points are plenty to fit a 2-D density. The paper's advantage for TIW is expected in high dimensions, where neither condition holds. That is what the image experiments test.
-
-% ============================================================================
-\section{Dataset, Preprocessing and EDA}\label{sec:data}
-% ============================================================================
-\textit{Carried over from Deliverable 2 (all numbers re-checked); the training-time pipeline is updated for this stage.}
-
-\subsection{Composition}
-CIFAR-10 contains $32\times32$ RGB images in ten classes; the 50{,}000-image training set is perfectly balanced \cite{krizhevsky2009cifar} and defines $\pdata$. We use the authors' released 5\% split (\texttt{fake\_data.npz} = $\Dbias$, \texttt{real\_data.npz} = $\Dref$).
-\begin{table}[H]
-\centering
-\caption{Dataset configuration verified on the loaded arrays.}
-\label{tab:dataset}
-\small
-\begin{tabularx}{\textwidth}{lYYY}
-\toprule
-Property & Balanced target & $\Dbias$ & $\Dref$ \\ \midrule
-Instances & 50{,}000 & 10{,}000 & 500 \\
-Resolution / type & $32\times32\times3$, uint8 & $32\times32\times3$, uint8 & $32\times32\times3$, uint8 \\
-Role & target $\pdata$, FID reference & large biased set & weak supervision (source only) \\
-Sampling & 5{,}000 per class & long-tail, 100.75:1 & random 5\% subset \\
-\bottomrule
+\subsection{Training settings and computing environment}
+A training exposure counts one presentation of one image, including repeats. Unless otherwise stated, our image comparison uses the checkpoint at 3,512,320 exposures for \emph{each} model. Table~\ref{tab:config} separates this comparison point from the actual end of each run.
+\begin{table}[H]\centering
+\caption[Training settings]{Settings reported in the paper or its official training command, compared with our image experiments. Differences listed here were not varied one at a time.}\label{tab:config}
+\small\begin{tabularx}{\linewidth}{@{}P{28mm}P{44mm}Y@{}}\toprule
+Setting & Original configuration & Our configuration and its significance\\\midrule
+Hardware & Four RTX 4090 graphics processors & Two Kaggle Tesla T4 processors. We trained one model on each; the session limit restricted the exposure budget.\\
+Denoiser & DDPM++, about 56 million parameters & DDPM++ design, \resParams{} million parameters. Both models had less capacity than the original.\\
+Batch and learning rate & 256 images, peak $10^{-3}$, rising over 10 million exposures & Same rate schedule and effective batch. TIW accumulated two groups of 128 images to fit in memory.\\
+Duration & 11 million exposures & DSM(obs) reached \resMimgobs{} million; TIW reached \resMimgtiw{} million. At the matched checkpoint the learning rate was about 35\% of its peak.\\
+EMA and dropout & Half life of 0.5 million exposures; dropout 0.13 & Both unchanged.\\
+Augmentation & EDM augmentation with probability 0.12 & Horizontal flips only, giving less regularisation on the 10,380 distinct images.\\
+Arithmetic & 32 bit floating point & 16 bit autocasting, loss scaling and safeguards for nonfinite gradients. The effect on quality was not isolated.\\
+Discriminator & ADM features and trained head; 10,000 updates of 128 images per source & Same design and batch. Learning rate $3\times10^{-4}$ from the official script; training took \resDiscMinutes{} minutes on a T4.\\
+Score correction & $\nabla\log\tilde w$ & Gradient of the clipped $\log\bar d$ with the safeguards in Section~\ref{sec:practical}.\\
+FID evaluation & EDM evaluator, 50,000 generated images against the CIFAR training set & \texttt{pytorch-fid}, using the same family of Inception weights and all 50,000 training images. Implementations can differ numerically.\\
+Sampler & Heun, 18 steps and 35 network evaluations & Same in the main comparison.\\
+Bias classifier & VGG13 with batch normalisation & Same architecture family \cite{chenyaofo2021cifar}, \resClfAcc\% test accuracy. We did not establish that the weights are identical.\\\bottomrule
 \end{tabularx}
 \end{table}
-\begin{figure}[H]
-\centering
-\fig{sample_grid.png}{sample grid from Deliverable 2}
-\caption{One raw image per class from $\Dbias$ (top) and $\Dref$ (bottom).}
-\label{fig:samplegrid}
-\end{figure}
-The NPZ files contain no labels. For \emph{analysis only}, we recovered each image's CIFAR-10 class by matching a SHA-1 hash of its pixels against the official training set. All 10{,}500 images matched. The labels are never given to any model; TIW-DSM sees only the source of each image.
+The software targets Python 3.10 or later and PyTorch 2.1 or later \cite{paszke2019pytorch}. Training used CUDA on two T4 processors with 15 GB each; generation also runs on a CPU. The training session lasted about 11.3 hours; the evaluation session lasted about three hours. Dependencies include NumPy, SciPy, Pillow, PyArrow, gdown, Matplotlib, Streamlit \cite{streamlit} and version 0.3.0 of \texttt{pytorch-fid} \cite{seitzer2020pytorchfid}. The requirements specify mostly version ranges, not a record of every installed package version. Training used seed 0 for each model. Different code paths and batch accumulation mean that the same nominal seed need not give identical initial weights or training noise. At evaluation, we deliberately paired the noise seeds.
 
-\subsection{Class distribution}
-\begin{figure}[H]
-\centering
-\fig{class_distribution_d2.png}{class distribution from Deliverable 2}
-\caption{Exact class counts: long-tailed $\Dbias$ (log scale) and the random 500-image $\Dref$.}
-\label{fig:classdist}
-\end{figure}
-$\Dbias$ = [4030, 2416, 1448, 868, 520, 312, 187, 112, 67, 40] for airplane$\to$truck. That is a 100.75:1 ratio, with airplanes + automobiles at 64.46\% and ships + trucks at 1.07\%. $\Dref$ = [51, 65, 43, 47, 50, 40, 53, 50, 45, 56], a max/min ratio of 65/40 = 1.625 (rounded to 1.63; the Deliverable 2 notebook printed 1.62 because of floating-point rounding). The reference set is close to balanced but not exactly balanced. With only 40--65 images per class it is also a noisy description of $\pdata$.
-
-\subsection{Quality checks}
-No NaNs, invalid shapes or corrupted images, and no exact duplicates inside either file. \textbf{120 images appear in both $\Dbias$ and $\Dref$}, since both were drawn from the same CIFAR-10 pool. We keep them because we use the authors' exact files. The official score-training archive (20{,}000 PNGs, 10{,}380 unique) is exactly $\Dbias$ plus $\Dref$ repeated 20 times; we rebuild the same $\Dobs$ directly from the NPZ files. Per-channel means of $\Dbias$ (0.499/0.504/0.492) differ slightly from the target (0.491/0.482/0.447) because of its different class mix (more sky and road). The bias is a shift in class proportions, not a colour artefact.
-\begin{figure}[H]
-\centering
-\fig[0.85\linewidth]{channel_stats.png}{channel statistics from Deliverable 2}
-\caption{Per-channel mean and standard deviation (pixels in [0,1]).}
-\label{fig:channels}
-\end{figure}
-
-\subsection{Preprocessing pipeline used for training}
-\begin{table}[H]
-\centering
-\caption{Preprocessing stages (training-time pipeline, extended from Deliverable 2).}
-\label{tab:prep}
-\small
-\begin{tabularx}{\textwidth}{p{30mm}p{62mm}Y}
-\toprule
-Stage & Operation & Reason \\ \midrule
-Acquire & official \texttt{fake\_data.npz}, \texttt{real\_data.npz}; CIFAR-10 train/test & exact research split \\
-Validate & shape, dtype, range, NaNs; hash label recovery & detects data errors; analysis labels \\
-Build $\Dobs$ & $\Dbias$ + $\Dref$ repeated 20$\times$ (20{,}000 items) & 1:1 sources $\Rightarrow$ $\pobs=\frac12\pbias+\frac12\pdata$, so $\tilde w=2d$ \\
-Tensor + normalise & HWC uint8 $\to$ CHW float32, $x/127.5-1$ & $[-1,1]$, so EDM's $\sigma_{\mathrm{data}}=0.5$ applies \\
-Augment (score) & random horizontal flip & variation without changing resolution \\
-Discriminator input & no flip; VP perturbation at importance-sampled $\tau$ & same as official \texttt{train\_classifier.py} \\
-Batching & shuffle, batch 256 (score), 128+128 (discriminator) & official batch sizes \\
-\bottomrule
+\subsection{Who contributed what}\label{sec:attrib}
+\begin{table}[H]\centering
+\caption[Attribution of code and results]{The components written by our group, the components adapted or reused, and the origin of the results.}\label{tab:attrib}
+\small\begin{tabularx}{\linewidth}{@{}P{32mm}Y@{}}\toprule
+Category & Contribution\\\midrule
+Written by our team & The denoiser, source classifier interface, weight and gradient calculations, EDM forms of the losses, comparison variants, data pipeline and recovery of labels. We wrote the training loops, including resumption, time limits, EMA and mixed precision. We also wrote the evaluation routines, including a Fréchet distance calculation compatible with newer SciPy versions and precision and recall using nearest neighbours. The toy experiment, solver study, report generation and Streamlit application are ours.\\
+Adapted from published work & We implemented the EDM preconditioning, noise schedule, Heun sampler and averaging rule from Karras and colleagues \cite{karras2022edm}. VP conversion and time sampling follow the authors' \texttt{classifier\_lib.vpsde}; discriminator settings follow their \texttt{train\_classifier.py} \cite{tiwdsmcode}.\\
+Reused & We obtained the OpenAI ADM encoder through the official repository. In \texttt{nn.py} we bypassed legacy activation checkpointing for mixed precision; in \texttt{fp16\_util.py} we removed an unused logger import. The first edit changes memory use and recomputation, not the architecture. We reused the authors' data and pretrained encoder weights, the Inception network distributed with \texttt{pytorch-fid}, and the VGG13 classifier from Chen \cite{chenyaofo2021cifar}. We did not run the official training or sampling scripts.\\
+Results & Table~\ref{tab:paperfid} and the paper column in Table~\ref{tab:main} cite the original experiments. Our other numerical results come from the recorded summaries; the text also reports rounded and derived values. Screenshots document runs of our application, not separate tests of image quality.\\\bottomrule
 \end{tabularx}
 \end{table}
 
-% ============================================================================
-\section{Reproduction Results}\label{sec:results}
-% ============================================================================
-\subsection{Evaluation protocol}
-\begin{itemize}[leftmargin=5mm,itemsep=1pt,topsep=1pt]
-\item \textbf{FID} \cite{heusel2017fid}: \resNimgtiw{} generated images (seeds $0,\dots,N-1$, identical for every model) against Inception statistics of \emph{all} 50{,}000 balanced training images, as in the paper. Features come from \texttt{pytorch-fid}, which uses the same TF-ported Inception weights as EDM. Sampler: EDM Heun, 18 steps (35 NFE).
-\item \textbf{Precision / Recall} \cite{kynkaanniemi2019pr}: $k=3$ nearest-neighbour manifolds on 10k real vs.\ 10k generated Inception features. Recall is the metric the paper uses to explain low-diversity failures.
-\item \textbf{Bias (paper Eq.~51)}: $\sum_{z}\big|\mathbb{E}_{\mathbf{x}\sim\Dref}[p(z|\mathbf{x})]-\mathbb{E}_{\mathbf{x}\sim p_\theta}[p(z|\mathbf{x})]\big|$ with $p(z|\mathbf{x})$ from a pretrained CIFAR-10 VGG13-BN \cite{simonyan2015vgg,chenyaofo2021cifar} (test accuracy \resClfAcc\%). Lower is better.
-\item \textbf{Class shares}: argmax class proportions, their $L_1$ distance to uniform, and the \emph{tail share} (dog, frog, horse, ship, truck: 50\% under $\pdata$, 7.2\% in $\Dbias$).
-\item \textbf{Reference floors}: the same metrics computed on real data (Table~\ref{tab:main}, bottom) show what ``perfect'' looks like at each sample size.
-\end{itemize}
+\subsection{Checks before training on images}\label{sec:verify}
+Before committing graphics processor time, we ran the scripts on a CPU using synthetic files with the same layout as the research data and a network with about 0.7 million parameters. This exercise covered data preparation, discriminator and denoiser training, resuming from a checkpoint, evaluation, the solver experiment, report generation and application startup without a browser window.
 
-\subsection{Discriminator}
-\begin{table}[H]
-\centering
-\caption{Our time-dependent discriminator (\resDiscBackbone{} backbone, \resDiscMinutes{} min training) on 500 reference and 500 biased training images, by diffusion time. $\sigma$ is the matching EDM noise level and $w$ the implied ratio $d/(1-d)$ on biased images.}
-\label{tab:disc}
-\small
-\begin{tabular}{rrrrrr}
-\toprule
-VP time $\tau$ & EDM $\sigma$ & bal.\ acc.\ (\%) & mean $d$ on $\Dref$ & mean $d$ on $\Dbias$ & median $w$ on $\Dbias$ \\ \midrule
+The next check used a problem in two dimensions. Two Gaussian clusters have centres $(-2,-2)$ and $(2,2)$ and identity covariance. The biased source draws 90\% of its points from the first cluster and 10\% from the second; the target draws half from each. We used 10,000 biased examples and 500 reference examples. With equal sampling from the two sources, ordinary DSM should put about $0.5(0.10)+0.5(0.50)=0.30$ of its output in the second cluster. Small perceptrons let us test the same loss, coordinate conversion and sampler as the image models against this known answer.
+\begin{table}[H]\centering
+\caption[Minority cluster in two dimensions]{Share of generated points in the second cluster. Values are means and standard deviations over three seeds, with 20,000 samples per seed. The target is 0.500.}\label{tab:toy}
+\small\begin{tabular}{lcc}\toprule
+Training method & Mean share & Standard deviation\\\midrule
+DSM(ref) & \resToyref & \resToyStdref\\
+DSM(obs) & \resToyobs & \resToyStdobs\\
+IW DSM & \resToyiw & \resToyStdiw\\
+Weighting only & \resToytiwW & \resToyStdtiwW\\
+Correction only & \resToytiwC & \resToyStdtiwC\\
+TIW DSM & \resToytiw & \resToyStdtiw\\\bottomrule
+\end{tabular}\end{table}
+\begin{figure}[H]\centering
+\asset[width=\linewidth]{toy_2d.png}
+\caption[Generated points in two dimensions]{Results for seed 0. Weighting alone leaves most points in the first cluster. Adding score correction moves the second cluster closer to its target share.}\label{fig:toy}
+\end{figure}
+The baseline gave \resToyobs{}, close to 0.30. Weighting alone gave \resToytiwW{}. Adding correction raised the share to \resToytiwC{} on its own and \resToytiw{} with weighting. Neither reached 0.50. The clean image weighting analogue and reference only training came closer in this simple setting. The test supports the \emph{direction} of our correction; it is not evidence that TIW outperforms those alternatives on images. Finite training, imperfect ratios and numerical approximations can all affect the result.
+
+
+\section{Dataset, preprocessing and exploratory analysis}\label{sec:data}
+\subsection{Composition and source labels}
+CIFAR 10 contains colour images of ten object classes at a resolution of $32\times32$ pixels. The balanced training set contains 5,000 images per class and defines our target distribution \cite{krizhevsky2009cifar}. We used the two arrays released by the authors for their 5\% experiment. Despite the filenames, both contain real CIFAR images: \texttt{fake\_data.npz} is the biased source and \texttt{real\_data.npz} is the reference source.
+\begin{table}[H]\centering
+\caption[Composition of the data]{Properties of the arrays used in the experiment. The 5\% refers to 500 relative to 10,000, not to 5\% of the complete CIFAR training set.}\label{tab:dataset}
+\small\begin{tabularx}{\linewidth}{@{}P{29mm}YYY@{}}\toprule
+Property & Balanced target & Biased source $\Dbias$ & Reference source $\Dref$\\\midrule
+Images & 50,000 & 10,000 & 500\\
+Shape and type & $32\times32\times3$, uint8 & $32\times32\times3$, uint8 & $32\times32\times3$, uint8\\
+Sampling & 5,000 per class & Largest class is 100.75 times the smallest & Random sample from the target population\\
+Purpose & Target for FID & Main collection for training & Examples of the desired distribution\\\bottomrule
+\end{tabularx}\end{table}
+\begin{figure}[H]\centering
+\asset[width=\linewidth]{sample_grid.png}
+\caption[Raw examples by class]{One unprocessed image per class from the biased set (top) and the reference set (bottom).}\label{fig:samplegrid}
+\end{figure}
+Neither file contains object labels. For analysis, we matched a SHA 1 hash of each image's pixel values against the official training set. All 10,500 entries matched. The denoiser and source discriminator never received these recovered class labels. The separate classifier used for evaluation had been trained with class labels; the distinction matters when describing the supervision used by this project.
+
+\subsection{How uneven are the two sources?}
+In class order (airplane, automobile, bird, cat, deer, dog, frog, horse, ship and truck), the biased counts are 4,030, 2,416, 1,448, 868, 520, 312, 187, 112, 67 and 40. Airplanes and automobiles account for 64.46\% of the data. Ships and trucks together account for only 1.07\%. The reference counts in the same order are 51, 65, 43, 47, 50, 40, 53, 50, 45 and 56. The largest reference class is 1.625 times the smallest ($65/40$). The sample is much closer to balance, but 40 to 65 examples per class cannot describe the target exactly.
+\begin{figure}[H]\centering
+\asset[width=\linewidth]{class_distribution_d2.png}
+\caption[Class frequencies in the two sources]{The logarithmic scale on the biased counts makes the rare classes visible. The class counts in the smaller reference sample also vary, although far less.}\label{fig:classdist}
+\end{figure}
+
+\subsection{Image quality and overlap}
+We found no invalid shapes, corrupted images, missing pixel values or exact duplicates within either file. There were 120 images common to both files. We retained them because removing them would have changed the authors' split. Their score training archive has 20,000 entries but only 10,380 distinct images. We reconstructed that same collection directly from the arrays by keeping each biased entry once and repeating the reference entries 20 times.
+
+The mean red, green and blue values in the biased set were 0.499, 0.504 and 0.492 after scaling the pixels to the interval $[0,1]$. The target means were 0.491, 0.482 and 0.447. These differences are consistent with a change in the mix of classes. Channel averages cannot rule out other kinds of bias within a class.
+\begin{figure}[H]\centering
+\asset[width=.87\linewidth]{channel_stats.png}
+\caption[Colour statistics]{Mean and standard deviation of each colour channel on a scale from zero to one.}\label{fig:channels}
+\end{figure}
+
+\subsection{Preparing a training batch}
+The images already have the resolution the network needs. The important preprocessing decisions concern the source mixture, the pixel scale and the way noise is added.
+\begin{table}[H]\centering
+\caption[Training pipeline]{How the raw arrays become batches for the denoiser and the discriminator.}\label{tab:prep}
+\small\begin{tabularx}{\linewidth}{@{}P{33mm}Y@{}}\toprule
+Stage & Operation and reason\\\midrule
+Acquire and validate & Read both released archives and the official CIFAR training and test sets. Check shapes, data types, ranges and missing values. Use pixel hashes to recover analysis labels.\\
+Build $\Dobs$ & Combine 10,000 biased entries with $20\times500$ reference entries. Each source supplies half of the observed distribution, which is why the mixture weight is $2d$.\\
+Convert pixels & Move the colour channel from last to first, convert unsigned bytes to 32 bit floats, and apply $x/127.5-1$. The resulting range is $[-1,1]$, consistent with the EDM setting $\sigma_{\rm data}=0.5$.\\
+Denoiser examples & Apply random horizontal flips for variation without changing resolution. Shuffle and train on effective batches of 256.\\
+Discriminator examples & Use no flip. Apply VP perturbations at times drawn by importance sampling, as in the official discriminator script. Each batch contains 128 examples from each source.\\\bottomrule
+\end{tabularx}\end{table}
+
+\section{Reproduction results}\label{sec:results}
+\subsection{What the measurements mean}
+\lead{Fréchet Inception Distance (FID).} Following the original evaluation, we compared \resNimgtiw{} generated images per model with features from all 50,000 balanced training images \cite{heusel2017fid}. FID compares the means and covariances of Inception features. A smaller value indicates closer agreement, not a percentage of correct images. We used \texttt{pytorch-fid} with Inception weights ported from TensorFlow. Both models used the same noise seeds, 0 through 49,999, and the Heun solver with 18 steps. These require 35 network evaluations (NFE).
+
+\lead{Precision and recall.} We used neighbourhoods defined by the three nearest neighbours in the feature space, with 10,000 real and 10,000 generated feature vectors \cite{kynkaanniemi2019pr}. Precision asks how much generated output lies within the region represented by real examples. Recall asks how much of the real region the generator covers. They describe image distributions, not the accuracy of an object classifier.
+
+\lead{Bias and class shares.} Equation 51 of the paper compares the mean class probabilities assigned to the reference set and to the generated images:
+\[
+B=\sum_z\left|\mathbb E_{\mathbf x\sim\Dref}p(z\mid\mathbf x)-
+                 \mathbb E_{\mathbf x\sim p_\theta}p(z\mid\mathbf x)\right|.
+\]
+The probabilities come from a pretrained VGG13 classifier with batch normalisation \cite{simonyan2015vgg,chenyaofo2021cifar}. Its CIFAR test accuracy was \resClfAcc\%. A smaller $B$ indicates closer agreement with the reference set. Separately, we counted the class with the largest predicted probability for each generated image, calculated the $L_1$ distance of that histogram from uniform, and measured the combined share of dog, frog, horse, ship and truck. These five \emph{tail classes} make up 50\% of the target population and 7.2\% of the biased sample. A correct combined share need not mean that each individual share is correct.
+
+\subsection{Can the discriminator distinguish the sources?}
+We examined 500 training images from each source. At low noise the discriminator separated the sources with about 99\% balanced accuracy. As noise rose, the two sets became harder to tell apart. By $\tau=1$ the mean predicted source probabilities were almost the same, and accuracy was \resDiscAccHigh\%. These are training measurements, not an independent calibration test.
+\begin{table}[H]\centering
+\caption[Discriminator by noise level]{Output of the ADM discriminator after \resDiscMinutes{} minutes of training. The last column shows the median \emph{odds} $d/(1-d)$ for biased images, not the weight $2d$ used on the mixture. Values are rounded.}\label{tab:disc}
+\small\begin{tabular}{rrrrrr}\toprule
+VP time $\tau$ & EDM $\sigma$ & Accuracy (\%) & Mean $d$ on $\Dref$ & Mean $d$ on $\Dbias$ & Median odds\\\midrule
 \rowsfile{disc_table}
-\bottomrule
-\end{tabular}
-\end{table}
-\begin{figure}[H]
-\centering
-\fig[0.85\linewidth]{disc_diag.png}{discriminator separability vs.\ time (scripts/train\_discriminator.py)}
-\caption{Separability of the two sources falls as noise grows: balanced accuracy goes from \resDiscAccLow\% at $\tau=0.01$ to \resDiscAccHigh\% at $\tau=1$.}
-\label{fig:disc}
+\bottomrule\end{tabular}\end{table}
+\begin{figure}[H]\centering
+\asset[width=.88\linewidth]{disc_diag.png}
+\caption[Source separation as noise increases]{Balanced accuracy falls from \resDiscAccLow\% at $\tau=0.01$ to \resDiscAccHigh\% at $\tau=1$. High noise leaves little information about the image source.}\label{fig:disc}
 \end{figure}
 
-\subsection{Training}
-\begin{figure}[H]
-\centering
-\fig{training_curves.png}{training loss, TIW weight statistics and speed (runs/*/log.jsonl)}
-\caption{Training curves. Left: loss. Middle: mean and std of the TIW weight $\tilde w=2d$ on training batches (ideal mean $\approx1$). Right: seconds per 1{,}000 images.}
-\label{fig:curves}
-\end{figure}
-Both models were trained in one Kaggle session on two T4 GPUs in parallel. DSM(obs) completed \resMimgobs{} Mimg in \resHoursobs{} h (\resSecKimgobs{} s/kimg). TIW-DSM first waited for the discriminator (\resDiscMinutes{} min) and then reached \resMimgtiw{} Mimg in \resHourstiw{} h (\resSecKimgtiw{} s/kimg) before the session limit. The extra cost of TIW-DSM is the forward and input-gradient pass through the 48M-parameter frozen ADM extractor at every step. It made each image about 4$\times$ more expensive in our setup, versus 1.3$\times$ in the paper (0.34 vs.\ 0.26 s/batch), where the score network is 6$\times$ larger. Its GPU also needed 2 micro-batches of 128 to fit. The two loss curves are not directly comparable because TIW-DSM's loss is reweighted and has a shifted target. The TIW weight statistics stay stable throughout (mean $\approx$0.84, std $\approx$0.91).
+\subsection{What happened during training}
+We trained the models in parallel on separate T4 processors. DSM(obs) completed \resMimgobs{} million exposures in \resHoursobs{} hours, or \resSecKimgobs{} seconds per 1,000 images. TIW first required \resDiscMinutes{} minutes to train its discriminator. Denoiser training then took \resHourstiw{} hours before the session limit, reaching \resMimgtiw{} million exposures at \resSecKimgtiw{} seconds per 1,000 images. TIW required a forward pass and an input gradient through the fixed feature extractor, and accumulated gradients over two groups of 128 images.
 
-\subsection{Main results}
-\begin{table}[H]
-\centering
-\caption{CIFAR-10 LT / 5\%. ``Paper FID'' are the authors' reported values \cite{kim2024tiwdsm}; all other columns are our results. Bottom block: the same metrics on real data (reference floors).}
-\label{tab:main}
-\footnotesize\setlength{\tabcolsep}{3.5pt}
-\begin{tabular}{lrrrrrrr}
-\toprule
-Method & Paper FID & Our FID$\downarrow$ & Prec.$\uparrow$ & Recall$\uparrow$ & Bias Eq.51$\downarrow$ & Tail \% & $L_1$ unif.$\downarrow$ \\ \midrule
+In our setting, TIW took about $8.6/2.2\approx3.9$ times as long per training image as DSM(obs). Kim and colleagues reported 0.26 and 0.34 seconds per batch on four RTX 4090 processors, but their comparison was \emph{IW DSM against TIW DSM}, not DSM(obs) against TIW. The two timing ratios do not answer the same question. Nor can the two training losses be compared by their height: TIW changes the weight and target of the loss. Its logged mixture weights had a mean of about 0.84 and a standard deviation of about 0.91. Those two summaries do not reveal the whole distribution.
+\begin{figure}[H]\centering
+\asset[width=\linewidth]{training_curves.png}
+\caption[Training measurements]{From left to right: training loss, batch mean and standard deviation of $\tilde w=2d$, and seconds per 1,000 images. Under the ideal mixture ratio the mean weight is one.}\label{fig:curves}
+\end{figure}
+
+\subsection{Main comparison at equal training exposure}
+\begin{table}[H]\centering
+\caption[Main reproduction results]{Results for the 5\% reference setting. The paper FID column comes from Kim and colleagues \cite{kim2024tiwdsm}. All remaining columns contain our measurements. Blank cells have no published counterpart. The second group is a longer baseline run, and the last group contains real datasets rather than theoretical bounds.}\label{tab:main}
+\footnotesize\setlength{\tabcolsep}{3.6pt}
+\begin{tabular}{@{}lrrrrrrr@{}}\toprule
+Model or source & Paper FID & Our FID & Precision & Recall & Bias $B$ & Tail (\%) & $L_1$\\\midrule
 \rowsfile{main_rows}
 \midrule
 \rowsfile{real_rows}
-\bottomrule
-\end{tabular}
-\end{table}
-\textbf{Reading the table.} At equal training length (3.51 Mimg), TIW-DSM is clearly less biased than DSM(obs) on every class-balance measure. Eq.~51 bias drops from \resBiasobs{} to \resBiastiw{} (\resBiasRed\% lower), the $L_1$ distance of the class histogram to uniform from \resLoneobs{} to \resLonetiw, and the tail share rises from \resTailobs\% to \resTailtiw\%, essentially the 50\% target. For reference, the classifier itself gives a bias of 0.101 on real balanced test images (its noise floor), and 0.943 on $\Dbias$. The FID ordering of the paper did \emph{not} reproduce: TIW-DSM has FID \resFIDtiw{} against \resFIDobs{} for DSM(obs) (paper: 11.51 vs.\ 12.99). Precision is \emph{higher} for TIW-DSM (\resPrectiw{} vs.\ \resPrecobs) while recall is \emph{lower} (\resRecalltiw{} vs.\ \resRecallobs): its images are individually realistic but cover less of the target distribution. Absolute FIDs are far from the paper's (the real-data floor at 10k is \resFIDtestfloor), mostly because of training length: the same DSM(obs) run reaches FID 19.56 when trained for the full 11 Mimg, versus 35.20 at 3.51 Mimg. Section~\ref{sec:discussion} analyses why TIW-DSM lost diversity.
+\bottomrule\end{tabular}\end{table}
+At 3,512,320 exposures per model, the bias score fell from \resBiasobs{} to \resBiastiw{}, a relative reduction of \resBiasRed\% using the unrounded measurements. The distance of the class histogram from uniform fell from \resLoneobs{} to \resLonetiw{}. The share of the five tail classes rose from \resTailobs\% to \resTailtiw\%, close to their combined target of 50\%.
 
-\subsection{Class proportions}
-\begin{figure}[H]
-\centering
-\fig{class_share.png}{class proportions: target, D\_bias, DSM(obs), TIW-DSM}
-\caption{Class shares of 50k generated images (classifier argmax) against the uniform target and the exact proportions of $\Dbias$.}
-\label{fig:classshare}
+Image statistics told a different story. FID increased from \resFIDobs{} to \resFIDtiw{}, whereas the paper reported a decrease from 12.99 to 11.51. TIW precision rose from \resPrecobs{} to \resPrectiw{}, but recall fell from \resRecallobs{} to \resRecalltiw{}. In feature space, a greater fraction of generated examples fell within the region occupied by real examples, while the generator covered less of that region. Neither number certifies the quality of an individual image.
+
+For context, the real test set gave FID \resFIDtestfloor{} and bias 0.101. The bias comparison uses only 500 reference images and an imperfect classifier. Sample size and variation matter; these values are not universal limits. At 11 million exposures the same baseline run reached FID \resFIDobsfull{}. This shows that training length mattered for the baseline, but it does not tell us what a longer TIW run would have achieved. We have no confidence interval across image training seeds.
+
+\subsection{Which classes changed?}
+\begin{figure}[H]\centering
+\asset[width=.95\linewidth]{class_share.png}
+\caption[Generated class proportions]{The target assigns one tenth of its mass to each class. Generated proportions use the classifier's most likely label on 50,000 images per model. The biased proportions are the observed class counts.}\label{fig:classshare}
 \end{figure}
-\begin{table}[H]
-\centering
-\caption{Class shares in \% (generated: VGG13-BN argmax over the evaluation samples).}
-\label{tab:classshare}
-\small
-\begin{tabular}{lrrrr}
-\toprule
-Class & Target & $\Dbias$ & DSM(obs) & TIW-DSM \\ \midrule
+\begin{table}[H]\centering
+\caption[Shares of the ten classes]{Percentage of images assigned to each class. Each model column contains one set of 50,000 generated images.}\label{tab:classshare}
+\small\begin{tabular}{lrrrr}\toprule
+Class & Target & Biased source & DSM(obs) & TIW DSM\\\midrule
 \rowsfile{class_rows}
-\bottomrule
-\end{tabular}
-\end{table}
+\bottomrule\end{tabular}\end{table}
+Airplanes provide the clearest example of the change: their generated share fell from 28.4\% to 10.1\%, close to the 10\% target. Trucks illustrate its limit: their share rose from 5.6\% to 17.0\%. Table~\ref{tab:classshare} shows why the combined tail share should be read alongside the individual classes.
 
-\subsection{Qualitative samples}
-\begin{figure}[H]
-\centering
-\begin{minipage}{0.49\linewidth}\centering\fig{samples_obs.png}{DSM(obs) samples, seeds 0--63}\\ \small DSM(obs)\end{minipage}\hfill
-\begin{minipage}{0.49\linewidth}\centering\fig{samples_tiw.png}{TIW-DSM samples, seeds 0--63}\\ \small TIW-DSM\end{minipage}
-\caption{Samples from the 3.51-Mimg EMA weights with \emph{identical} noise seeds 0--63 (Heun, 35 NFE). DSM(obs) still produces many vehicles; TIW-DSM produces more animals and ships from the same noise. The same position in both grids starts from the same noise, so differences come only from the training objective.}
-\label{fig:samples}
+\subsection{What the generated images look like}
+\begin{figure}[H]\centering
+\begin{minipage}{.48\linewidth}\centering
+\includegraphics[width=\linewidth,trim={192.9mm 16.7mm 51.3mm 42.3mm},clip]{figures/app_compare64.png}\\[-1pt]
+\small DSM(obs)
+\end{minipage}\hfill
+\begin{minipage}{.48\linewidth}\centering
+\includegraphics[width=\linewidth,trim={33.3mm 16.7mm 211.2mm 42.3mm},clip]{figures/app_compare64.png}\\[-1pt]
+\small TIW DSM
+\end{minipage}
+\caption[Paired samples from the application]{The two grids come from the same hosted comparison: 64 images per model, starting seed 2026, Heun sampler and 35 network evaluations. Corresponding grid positions start from the same noise. This controls the inference input, not the randomness of training.}\label{fig:samples}
 \end{figure}
+Some objects are recognisable and others are difficult to identify. The grids let a reader see that ambiguity for the same inputs. The evidence for a change in class balance comes from the full evaluation, not from selecting particular images in this figure.
 
-% ============================================================================
-\section{Additional Experiment: Sampling Budget vs.\ Quality, Balance and Speed}\label{sec:extra}
-% ============================================================================
-\subsection{Research question and hypotheses}
-\callout{\textbf{RQ.} How do the number of sampling steps and the solver order affect sample quality, the generated class balance and the inference time of our trained models? Does TIW-DSM keep its debiasing advantage over DSM(obs) when sampling is made cheaper?}
-This is a \emph{computational analysis / hyperparameter study} carried out on fixed checkpoints. It is not a feasibility adjustment: we do not change data or training to make the reproduction fit, but study a deployment-relevant inference choice the paper fixes at 35 NFE. It matters directly for our application, where latency on a laptop CPU is the user-visible cost.
-\begin{itemize}[leftmargin=5mm,itemsep=1pt,topsep=1pt]
-\item \textbf{H1 (quality):} FID falls steeply up to $\approx$20--35 NFE, then saturates; at equal NFE, 2nd-order Heun beats 1st-order Euler.
-\item \textbf{H2 (balance):} class balance is decided mostly by the learned score field. TIW-DSM's lower bias should therefore hold at every budget, even when image quality drops.
-\item \textbf{H3 (cost):} time per image grows linearly with NFE, and the discriminator adds nothing at inference.
-\end{itemize}
 
-\subsection{Setup}
-Both EMA checkpoints at 3.51 Mimg (the same ones as in Table~\ref{tab:main}); Heun with $\{3,5,9,13,18,25\}$ steps (NFE $=2N-1\in\{5,9,17,25,35,49\}$) and Euler with $\{5,9,17,25,35,49\}$ steps (NFE $=N$), giving matched NFE pairs. For each of the 24 settings we generate \resStepsN{} images with \emph{the same seeds}. We report FID-10k (an explicitly small-sample FID, comparable across settings but not with the 50k numbers), precision/recall, Eq.~51 bias, tail share, batched throughput (batch 500) and single-image latency (median of 5 runs, after warm-up) on \resStepsDevice.
+\clearpage
+\section{Additional experiment: sampling cost, quality and balance}\label{sec:extra}
+\subsection{Question and expectations}
+A user waiting for an image can change the sampler without retraining the model. We therefore asked how many denoiser calls were worth making and whether a faster setting would preserve the change in class balance. The paper uses 35 calls for its main experiment. Our study varied the solver and the number of calls while keeping the model weights fixed. This is a separate inference experiment, not simply a shorter training run.
 
-\subsection{Results}
-\begin{figure}[H]
-\centering
-\fig{steps_experiment.png}{FID / recall / bias / time vs.\ NFE for both models and solvers}
-\caption{Sampling budget study. Solid lines: Heun. Dotted lines: Euler. Colours: model.}
-\label{fig:steps}
+We tested three expectations. First, we expected FID to improve rapidly up to about 20 to 35 network evaluations and then change little. At the same number of calls, we expected second order Heun to outperform first order Euler. Second, if the learned score determined most of the class balance, TIW should retain lower bias at every budget. Third, inference time should grow roughly in proportion to the number of calls, with no extra discriminator cost for TIW.
+
+\subsection{Controlled comparison}
+We used the same two EMA checkpoints as in Table~\ref{tab:main}. For $N$ steps, Heun uses $2N-1$ denoiser calls here and Euler uses $N$. We tested Heun at 3, 5, 9, 13, 18 and 25 steps, pairing these with Euler at 5, 9, 17, 25, 35 and 49 steps. The resulting 24 combinations cover two models, two solvers and six matched call budgets. Every combination used the same noise seeds and produced \resStepsN{} images.
+
+We compared FID, recall, Equation 51 bias and tail share, together with time per image in batches of 500 and the time to generate one image. The latter is the median of five measurements after an initial warm up on a \resStepsDevice{}. Precision and recall were part of the wider evaluation; the archived comparison by solver reports recall. The FID estimates in this section are comparable \emph{within} the study. They should not be read as changes from Table~\ref{tab:main}, which uses 50,000 generated images rather than 10,000.
+\begin{figure}[H]\centering
+\asset[width=\linewidth]{steps_experiment.png}
+\caption[Effects of the sampling budget]{FID, recall, bias and generation time as the number of denoiser calls increases. Solid lines represent Heun, dotted lines represent Euler, and colour identifies the model.}\label{fig:steps}
 \end{figure}
-\begin{table}[H]
-\centering
-\caption{Sampling-budget study (our results, \resStepsN{} images per setting, same seeds).}
-\label{tab:steps}
-\footnotesize
-\begin{tabular}{llrrrrrrrr}
-\toprule
-Model & Solver & Steps & NFE & FID-10k & Recall & Bias & Tail \% & ms/img (batch) & ms (1 img) \\ \midrule
+\begin{table}[H]\centering
+\caption[All sampling configurations]{All 24 settings, using \resStepsN{} generated images each. The last two columns give milliseconds per image in a batch of 500 and milliseconds for a single image.}\label{tab:steps}
+\footnotesize\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llrrrrrrrr}\toprule
+Model & Solver & Steps & Calls & FID & Recall & Bias & Tail (\%) & Batch (ms) & Single (ms)\\\midrule
 \rowsfile{steps_rows}
-\bottomrule
-\end{tabular}
-\end{table}
-At the paper's default (Heun, 18 steps), FID-10k is \resStepsFIDrefobs{} for DSM(obs) and \resStepsFIDreftiw{} for TIW-DSM, with bias \resStepsBiasrefobs{} vs.\ \resStepsBiasreftiw. The cheapest TIW-DSM setting within 10\% of its best FID-10k uses \resStepsKneeNFE{} NFE (FID-10k \resStepsKneeFID).
-\textbf{H1 (quality) -- partly supported.} FID-10k falls steeply and then saturates: for DSM(obs) with Heun it is 41.96 at 17 NFE, 37.76 at 25 and 37.44 at 35, with no gain at 49. Very low budgets break the 2nd-order solver: Heun with 3 steps (5 NFE) gives FID $\approx$339 for both models, while Euler at the same 5 NFE gives about 90. The expected Heun advantage appears only for DSM(obs) at $\geq$17 NFE (41.96 vs.\ 45.34 at 17). For TIW-DSM, Euler is as good or better at every budget (55.40 vs.\ 68.47 at 17 NFE; 52.16 vs.\ 53.13 at 35), and it has slightly higher recall.
+\bottomrule\end{tabular}\end{table}
 
-\textbf{H2 (balance) -- supported from 17 NFE upward.} At every budget of 17 NFE or more and for both solvers, TIW-DSM has lower Eq.~51 bias than DSM(obs) (Heun: 0.395/0.370/0.364/0.361 vs.\ 0.433/0.465/0.475/0.480; Euler: 0.420/0.398/0.385/0.376 vs.\ 0.587/0.530/0.498/0.490). Below that, samples are too degraded for the classifier-based measure to be meaningful. The solver also affects balance: Euler samples of both models contain fewer tail-class images than Heun samples at the same NFE (TIW-DSM 41.8--47.0\% vs.\ 50.2--56.3\%). The class balance is therefore not decided by the score field alone.
+\subsection{Where more computation helped}
+\lead{Quality.} At the default of 18 Heun steps, FID was \resStepsFIDrefobs{} for DSM(obs) and \resStepsFIDreftiw{} for TIW. The baseline gained little from extending Heun beyond 25 calls: its FID was 41.96 at 17 calls, 37.76 at 25, 37.44 at 35 and 37.55 at 49. At just five calls, Heun gave FID near 339 for both models; Euler was near 90. Our first expectation was therefore only partly supported. Heun beat Euler for the baseline at the tested budgets of 17 calls and above, but not for TIW. For TIW, Euler gave FID 55.40 against 68.47 at 17 calls, and 52.16 against 53.13 at 35. Euler also had higher recall for TIW across the tested budgets.
 
-\textbf{H3 (cost) -- supported.} Generation time is linear in NFE (about 1.3~ms per image per NFE when batched, about 15~ms per NFE for a single image on the T4) and identical for both models, because TIW-DSM needs no discriminator at sampling time.
+\lead{Class balance.} At the default, bias was \resStepsBiasrefobs{} for DSM(obs) and \resStepsBiasreftiw{} for TIW. For both solvers, TIW had lower bias than the baseline at every tested budget from 17 calls upward. We cannot extend that conclusion to every budget: at five or nine calls, poor images make the classifier difficult to interpret. The solver also matters. From 17 to 49 calls, Euler gave TIW a tail share between 41.8\% and 47.0\%; the corresponding Heun shares lay between 50.2\% and 56.3\%. The trained weights alone did not determine the final class mix.
 
-\textbf{Recommendation for the app.} 25 NFE (Heun 13 steps or Euler 25 steps) keeps FID within 6--10\% of the best value and the bias at its low plateau, at 70\% of the paper's 35-NFE cost. Euler 17 NFE is the cheapest acceptable setting for TIW-DSM.
+\lead{Time.} On the T4, each additional call cost approximately 1.3 milliseconds per image in a batch and about 15 milliseconds when generating a single image. The two models use the same denoiser architecture and number of calls. Measured times differ slightly, but the application does not need a discriminator pass at inference.
 
-% ============================================================================
-\section{Analysis and Discussion}\label{sec:discussion}
-% ============================================================================
-\subsection{Did TIW-DSM reduce bias?}
-The central claim of the paper is that TIW-DSM moves the generated distribution toward $\pdata$ while keeping the diversity of $\Dbias$. In our runs the Eq.~51 bias goes from \resBiasobs{} (DSM(obs)) to \resBiastiw{} (TIW-DSM), and the tail share from \resTailobs\% to \resTailtiw\% (target 50\%, $\Dbias$ 7.2\%). The correction is visible per class (Table~\ref{tab:classshare}): airplanes fall from 28.4\% to 10.1\% (target 10\%) and automobiles from 15.1\% to 6.7\%, while ships and trucks rise from 5.5\% and 5.6\% to 11.0\% and 17.0\%. The correction is not uniform. Some tail classes overshoot (truck 17.0\%, deer 14.5\%) and others stay low (bird 4.1\%, dog 4.3\%), so the max/min class ratio is still 4.2 (DSM(obs): 7.6). The answer to the central question is therefore yes, with a cost: recall falls from \resRecallobs{} to \resRecalltiw. Part of the debiasing comes at the expense of diversity, the DSM(ref)-like failure mode the method is designed to avoid.
+\lead{Choice for the demonstration.} Among the Heun settings, the cheapest TIW result within 10\% of the best Heun FID used 13 steps, or \resStepsKneeNFE{} calls. Its FID of \resStepsKneeFID{} was about 8.5\% above the best Heun result of 51.90. It used about 71\% as many calls as the default and gave bias 0.370. Across \emph{both} solvers, Euler at 17 calls was the cheapest setting within 10\% of the overall best FID (55.40 against 51.64), but its bias was higher at 0.420. The deployed interface offers Heun at 13 steps as an option. Its default remains Heun at 18 steps, or 35 calls, and its list of step counts does not include 17.
 
-\subsection{Why FID got worse: an over-confident discriminator}
-Our diagnostics point to one main mechanism. Table~\ref{tab:disc} shows that at low noise ($\tau\le0.1$) the discriminator separates the two sources with 99\% accuracy, and the median ratio it implies for biased images is $10^{-7}$--$10^{-5}$. Since $\tilde w=2d$, almost every image from $\Dbias$ receives a weight close to zero at these noise levels, and its score correction is large. The logged weights confirm this: across training, $\tilde w$ has mean 0.84 but standard deviation 0.91 (Fig.~\ref{fig:curves}), i.e.\ the weights are close to bimodal. At the noise levels that determine fine image detail, TIW-DSM therefore effectively trains on the 500 reference images (repeated 20 times) rather than on all 10{,}380 unique images. This is the density-chasm problem resurfacing at small $t$ (Section~\ref{sec:lit}), and it matches what we measure: higher precision (reference-like, clean images), lower recall (less variety), worse FID. A practical hint in the same direction: the official training script's default discriminator path points to the checkpoint saved at iteration 501. A briefly trained, less confident discriminator would produce flatter weights at small $t$. We trained ours for the full 10{,}000 iterations reported in the paper and did not have the budget to test earlier checkpoints.
+\section{Analysis and discussion}\label{sec:discussion}
+\subsection{What improved, and what did not?}
+TIW reduced our measured class bias, but its gains were uneven. Automobiles fell from 15.1\% to 6.7\%, while ships reached 11.0\%. Trucks at 17.0\% and deer at 14.5\% exceeded the 10\% target. Birds at 4.1\% and dogs at 4.3\% remained uncommon. Deer and birds are not among the five classes we defined as the tail. The ratio between the largest and smallest generated class shares improved from about 7.6 to 4.2, still far from one.
 
-\subsection{Other sources of the reproduction gap}
-Our absolute FIDs sit far above the paper's for both methods. The other causes, from largest to smallest expected effect:
-\begin{enumerate}[leftmargin=5mm,itemsep=1pt,topsep=1pt]
-\item \textbf{Model capacity:} \resParams M vs.\ 56M parameters. FID on CIFAR-10 is very sensitive to network size. The effect applies equally to both methods, so it should change absolute values more than the \emph{difference} between methods.
-\item \textbf{Augmentation:} the paper uses EDM's augmentation pipeline at $p=0.12$; we use flips only. With 10{,}380 unique training images seen for many epochs, the risk of memorisation is higher, and memorisation hurts FID and recall.
-\item \textbf{Training length:} both models are compared at 3.51 Mimg instead of 11, where the learning rate had only ramped to 35\% of its peak. Training length alone moves DSM(obs) from FID 35.20 to 19.56, so this is the largest single factor for the absolute values. TIW-DSM was about 4$\times$ slower per image (\resSecKimgtiw{} vs.\ \resSecKimgobs{} s/kimg), which is why it did not get further.
-\item \textbf{Metric implementation:} \texttt{pytorch-fid} vs.\ EDM's \texttt{fid.py}. Both use the same Inception weights, but resizing details differ, which typically shifts FID by a small constant.
-\item \textbf{Reference set size:} only 500 reference images train the discriminator, which makes the over-confidence above more likely.
-\end{enumerate}
-In summary, the \emph{relative} FID improvement of 1.48 reported by the paper did not reproduce at our scale. We measured a 16.1-point degradation instead. The \emph{direction} of the debiasing effect did reproduce clearly.
+Our FID increased by 16.10 points where the paper reported an improvement of 1.48 points. Recall also fell. The fair conclusion is that class balance improved \emph{in this run}, not that a loss of diversity is an inevitable cost of correcting bias. Likewise, better precision here does not undo the weaker recall or FID.
 
-\subsection{What the discriminator diagnostics show}
-Table~\ref{tab:disc} directly confirms the premise of TIW. The two perturbed distributions become harder to tell apart as noise grows: balanced accuracy is 99\% for $\tau\le0.1$, 95\% at 0.3, 70.5\% at 0.5 and chance (50\%) at 1.0, and $d\to0.5$ (i.e.\ $\tilde w\to1$) at high noise. The correction is therefore concentrated at low and intermediate noise, where class identity is decided, while at high noise TIW-DSM is trained essentially as DSM(obs). The same table also shows the downside discussed above: at low noise the ratio is not merely informative but saturated.
+\subsection{What the source probabilities can tell us}
+On the training images in Table~\ref{tab:disc}, balanced accuracy was about 99\% for $\tau\leq0.1$, 94.8\% at 0.3, 70.5\% at 0.5 and 50\% at 1.0. The mean probabilities approach 0.5 as noise increases, consistent with mixture weights moving towards one. This is the qualitative behaviour the paper predicts. It is not a measurement of ratio calibration or of the size of the input gradient.
 
-\subsection{Why weighting alone is not enough}
-Section~\ref{sec:whyboth} shows analytically that a weight depending only on $\mathbf{x}_t$ cannot change the DSM minimiser. Our 2-D experiment confirms it (``W only'' $\approx$ DSM(obs), Table~\ref{tab:toy}), and so does the paper's own ablation (W only 13.27 vs.\ none 12.99). The score correction is the term that actually removes the bias. Weighting is a variance/capacity refinement on top of it. This also explains why IW-DSM can be worse than DSM(obs) on images (15.79 vs.\ 12.99 in the paper). Its \emph{clean-data} weights are extremely uneven, because the discriminator is near-certain at $t\approx0$. A few reference-like images then dominate the gradient, which lowers effective sample size and recall.
+At low noise, median raw odds for biased images were between about $10^{-7}$ and $10^{-5}$. Many such examples may therefore have received very little weight. One plausible explanation for lower recall is that the small reference set had too much influence. There is a useful limit to this explanation: below a raw probability of $10^{-5}$, our stored training weight has a floor of $2\times10^{-5}$ and the derivative through the clamp is zero. The diagnostics do not show that these examples received a large correction, nor that \emph{every} biased example was suppressed. We did not measure ratio error on independent images, effective sample size by source, or the effect of stopping the discriminator earlier. Overfitting is a hypothesis, not an established cause of the FID result.
 
-\subsection{Practical takeaways from the sampling study}
-See Section~\ref{sec:extra}: the sampling budget is a free knob at deployment time, and the discriminator adds no inference cost. A user can therefore choose a low-latency setting without retraining, as long as the class balance holds at that budget (H2).
+\subsection{Other explanations we could not separate}
+The denoising network had \resParams{} million parameters rather than approximately 56 million. Both methods used the smaller network, but limited capacity need not affect them equally. We also used flips rather than the full EDM augmentation policy (probability 0.12) on only 10,380 distinct images. This may increase memorisation; we did not test it directly.
 
-% ============================================================================
-\section{Model Deployment}\label{sec:deploy}
-% ============================================================================
-\subsection{Inference pipeline}
-\begin{figure}[H]
-\centering
-\begin{tikzpicture}[node distance=4mm, box/.style={draw=Blue,fill=PaleBlue,rounded corners,align=center,font=\small,minimum height=12mm,text width=26mm}, arr/.style={-{Stealth},thick,Navy}]
-\node[box] (in) {\textbf{Input}\\ seed / settings\\ or uploaded image};
-\node[box,right=of in] (pre) {\textbf{Preprocessing}\\ seeded $\mathcal{N}(0,I)\cdot\sigma_{\max}$;\\ crop, $32^2$, $[-1,1]$};
-\node[box,right=of pre] (model) {\textbf{Trained model}\\ EDM U-Net $D_\theta$\\ (TIW-DSM EMA)};
-\node[box,right=of model] (solve) {\textbf{Prediction}\\ Heun/Euler ODE\\ + class label};
-\node[box,right=of solve] (out) {\textbf{Output}\\ image grid, PNG,\\ time, histogram};
-\draw[arr] (in) -- (pre); \draw[arr] (pre) -- (model); \draw[arr] (model) -- (solve); \draw[arr] (solve) -- (out);
-\draw[arr] (solve.south) -- ++(0,-5mm) -| node[pos=0.25,below,font=\scriptsize]{NFE network calls} (model.south);
+At our matched checkpoint the learning rate had reached only about 35\% of its peak. Longer training helped DSM(obs) substantially, but we have no corresponding TIW measurement at 11 million exposures. Clipped probabilities, gradient safeguards, automatic mixed precision and the ADM compatibility edit are further differences. Their individual effects are unknown. The two FID implementations use the same family of Inception weights, but preprocessing and numerical routines can still differ; we did not run both evaluators on identical samples. Finally, both the paper and our reproduction use a reference set of 500 images in this setting. Its small size and classifier errors complicate the measurement, but the reference size itself is not a deviation from the original study.
+
+\subsection{What the toy and sampling experiments add}
+In the two dimensional example, the minority share under weighting alone (\resToytiwW{}) stayed close to ordinary DSM (\resToyobs{}). This agrees with the conditional mean argument in Section~\ref{sec:whyboth} and with the authors' comparison of FID 13.27 using weighting alone against 12.99 without it. With an exact ratio, it is the correction that changes the target score. Weighting changes where training effort goes. The clean image estimator is different: very uneven clean weights can leave a few examples dominating the gradient and reduce effective sample size. This offers an explanation for, but does not by itself prove the cause of, the paper's IW result of 15.79 against 12.99 for DSM(obs).
+
+The sampling study addresses a practical decision that training comparisons do not answer. One can reduce waiting time without fitting new weights, but the faster solver need not preserve the same balance. For this model, choosing between Euler at 17 calls and Heun at 25 calls means deciding whether the lower cost or the closer class distribution matters more.
+
+\section{Model deployment}\label{sec:deploy}
+\subsection{From a seed or photograph to an output image}
+\begin{figure}[H]\centering
+\begin{tikzpicture}[node distance=4mm,box/.style={draw=Rule,fill=Pale,rounded corners=1.5pt,align=center,font=\small,minimum height=12mm,text width=25mm},arr/.style={-{Stealth},thick,Accent}]
+\node[box] (in) {\textbf{Input}\\Seed and settings, or a photograph};
+\node[box,right=of in] (prep) {\textbf{Prepare}\\Draw noise, or crop and add noise};
+\node[box,right=of prep] (net) {\textbf{Denoiser}\\Load averaged network weights};
+\node[box,right=of net] (solver) {\textbf{Solver}\\Take Heun or Euler steps};
+\node[box,right=of solver] (out) {\textbf{Output}\\Image, time and network calls};
+\draw[arr] (in) -- (prep);\draw[arr] (prep) -- (net);\draw[arr] (net) -- (solver);\draw[arr] (solver) -- (out);
+\draw[arr] (solver.south) -- ++(0,-4mm) -| node[pos=.22,below,font=\scriptsize]{Repeated denoiser calls} (net.south);
 \end{tikzpicture}
-\caption{Deployed inference pipeline (Streamlit). The discriminator is not part of inference.}
-\label{fig:pipeline}
+\caption[How inference works]{Only the denoiser and solver are needed to generate images. A separately installed classifier can label outputs in a local installation; it is not part of the hosted inference path.}\label{fig:pipeline}
 \end{figure}
-The app (\texttt{app/streamlit\_app.py}) loads only the EMA weights of the final score network. It has three tabs. \textbf{Generate} takes a seed (any integer, for example one given by the evaluator), a number of images, the solver and the step count, and can run DSM(obs) side by side on the same noise. \textbf{Image-to-image} takes \emph{any} uploaded image, preprocesses it to $32\times32$, adds noise up to a chosen strength and denoises it with the model (SDEdit \cite{meng2022sdedit}). This is a genuinely unseen input for the live demo. \textbf{How it works} explains the pipeline. The sidebar shows the checkpoint's SHA-256, its training objective, size and number of trained images. Together with the optional denoising-trajectory view, this demonstrates that outputs come from the trained model and are not stored images.
+On the \textit{Generate} tab, the user chooses a seed, image count, solver and step count. The seed fixes the initial noise, not an object class. Selecting both models pairs their starting noise. Uploading a photograph starts a different procedure automatically: the application takes a centre crop, resizes it to $32\times32$, adds noise and solves the denoising ordinary differential equation. This editing procedure follows the idea behind SDEdit \cite{meng2022sdedit}.
 
-\subsection{Dependencies and startup}
+The information tab explains the process; the sidebar identifies the checkpoint, objective, model size, training exposure and device. A new seed or upload exercises the model directly. A screenshot documents only the run shown.
+
+\subsection{Hosting and local startup}
+The demonstration runs on a CPU on Streamlit Community Cloud at \appURL{}. Both model files are in the repository, and \texttt{app/requirements.txt} lists the hosted dependencies. Class predictions and histograms are available only locally with \texttt{checkpoints/eval\_classifier\_vgg13bn.ts}.
+
+With compatible versions of Python and PyTorch, run these commands from the repository root. Generation needs neither a dataset download nor a CUDA device.
 \begin{lstlisting}
-pip install -r requirements.txt            # torch, numpy, scipy, pillow, streamlit, ...
-mkdir -p checkpoints/deploy
-# download tiw_dsm.pt (and dsm_obs.pt) from the weights link on page 1, or copy from runs/
-cp runs/tiw/ema_final.pt checkpoints/deploy/tiw_dsm.pt
-cp runs/obs/ema_final.pt checkpoints/deploy/dsm_obs.pt
-streamlit run app/streamlit_app.py           # -> http://localhost:8501  (works offline, CPU or GPU)
+python -m pip install -r requirements.txt
+python -m streamlit run app/streamlit_app.py
 \end{lstlisting}
+Open \url{http://localhost:8501}. For the published comparison, use the released weights rather than final snapshots from runs of different lengths.
 
-\subsection{Input / output format}
-\begin{table}[H]
-\centering
-\caption{Inference interface.}
-\label{tab:io}
-\small
-\begin{tabularx}{\textwidth}{p{28mm}Y}
-\toprule
-Input (generate) & seed: int in $[0,2^{31})$; $n\in\{1,4,8,16,32,64\}$; solver $\in\{$heun, euler$\}$; steps $\in\{3,\dots,49\}$; model $\in\{$TIW-DSM, DSM(obs)$\}$ \\
-Input (img2img) & PNG/JPG/WEBP/BMP of any size; strength $\sigma\in[0.2,20]$; noise seed \\
-Preprocessing & image $k$ uses noise $\mathcal{N}(0,I)$ from \texttt{torch.Generator().manual\_seed(seed+k)}, scaled by $\sigma_{\max}=80$. Upload: centre crop, bicubic resize to $32\times32$, $x/127.5-1$, plus $\sigma\cdot$noise \\
-Model output & tensor $[n,3,32,32]$ in $[-1,1]$ $\to$ uint8 $[n,32,32,3]$ \\
-Displayed output & image grid (downloadable PNG), wall-clock time, ms/image, NFE, per-image class and confidence (VGG13-BN), class histogram \\
-\bottomrule
-\end{tabularx}
-\end{table}
-
-\subsection{Example inference (programmatic)}
+\subsection{Running the model from Python}
+This CPU example returns 16 images as an array of unsigned bytes with shape $(16,32,32,3)$.
+\par\noindent\begin{minipage}{\linewidth}
 \begin{lstlisting}[language=Python]
-import torch
 from tiwdsm.io import load_ema
 from tiwdsm.edm import sample, seeded_latents
 from tiwdsm.data import to_uint8
-model, meta = load_ema("checkpoints/deploy/tiw_dsm.pt", "cpu")   # EMA weights only
-z = seeded_latents(range(2026, 2026 + 16))                         # input: seed 2026, 16 images
-imgs = to_uint8(sample(model, z, num_steps=18, solver="heun"))     # output: uint8 (16, 32, 32, 3)
+
+model, meta = load_ema("checkpoints/deploy/tiw_dsm.pt", "cpu")
+z = seeded_latents(range(2026, 2026 + 16), "cpu")
+imgs = to_uint8(sample(model, z, num_steps=18, solver="heun"))
 \end{lstlisting}
-On a Kaggle T4, generation at 35 NFE costs \resMsImg{} ms per image in batches of 500, or about 0.5~s for a single image (Table~\ref{tab:steps}). On a laptop CPU a batch of 16 images at 25 NFE takes a few seconds.
+\end{minipage}\par
+During the main TIW evaluation on a Kaggle T4, inference at 35 calls took \resMsImg{} milliseconds per image in batches of 500. The separate solver experiment measured about 0.53 seconds for one image at that budget. These measurements are distinct from the elapsed times displayed in the browser.
 
-\subsection{Application screenshots}
-\begin{figure}[H]
-\centering
-\fig{app_generate.png}{Screenshot 1: ``Generate'' tab with seed, settings, grid, timing and class histogram}
-\caption{Generate tab: TIW-DSM and DSM(obs) side by side from the same seed.}
-\label{fig:app1}
+\subsection{Application inputs and outputs}
+\begin{table}[H]\centering
+\caption[Application inputs and outputs]{Accepted inputs, transformations and outputs of the deployment.}\label{tab:io}
+\small\begin{tabularx}{\linewidth}{@{}P{32mm}Y@{}}\toprule
+Item & Detail\\\midrule
+Generation & Integer seed $0\leq s<2^{31}$; 1, 4, 8, 16, 32 or 64 images; Heun or Euler; 3, 5, 9, 13, 18, 25, 35 or 49 steps; TIW or DSM(obs).\\
+Upload & PNG, JPEG, WebP or BMP of any size; starting noise strength $0.2\leq\sigma\leq20$ and a noise seed.\\
+Input preparation & Image $k$ uses \texttt{torch.Generator().manual\_seed(seed+k)}. Standard Gaussian noise is scaled by $\sigma_{\max}=80$. For an upload, crop to a square, resize with bicubic interpolation, apply $x/127.5-1$ and add $\sigma$ times standard Gaussian noise.\\
+Model output & A floating point tensor with shape $[n,3,32,32]$. Clamp its entries to $[-1,1]$ and convert to unsigned bytes with shape $[n,32,32,3]$.\\
+Hosted display & A grid and downloadable PNG, elapsed time, milliseconds per image, call count and optional denoising trajectory. The upload view shows the input, the noisy input and the model output, with trajectory support.\\
+Local option & Class predictions, confidence and a histogram when the VGG13 helper is present.\\\bottomrule
+\end{tabularx}\end{table}
+
+\subsection{What the live tests showed}
+\begin{figure}[H]\centering
+\asset[width=.94\linewidth]{app_generate.png}
+\caption[Generating images from a seed]{With seed 2026, the hosted application generated 16 images per model using 18 Heun steps and 35 calls. The CPU display shows 9.88 seconds for TIW and 8.94 seconds for DSM(obs). The first image's denoising trajectory and the TIW checkpoint prefix \texttt{1366bae91a89} are visible. The sidebar reports objective \texttt{tiw} and 3.51 million training exposures.}\label{fig:app1}
 \end{figure}
-\begin{figure}[H]
-\centering
-\begin{minipage}{0.49\linewidth}\centering\fig{app_upload.png}{Screenshot 2: image-to-image with an uploaded photo}\end{minipage}\hfill
-\begin{minipage}{0.49\linewidth}\centering\fig{app_info.png}{Screenshot 3: sidebar with checkpoint hash and model info}\end{minipage}
-\caption{Left: image-to-image on an uploaded photo. Right: active-model panel (checkpoint SHA-256, objective, size).}
-\label{fig:app2}
+\begin{figure}[H]\centering
+\asset[width=\linewidth]{app_upload.png}
+\caption[Editing a photograph of a cat]{The input file was \texttt{cat.jpg}. From left: the crop at $32\times32$, the same crop after adding noise at $\sigma=0.5$, and the model output. With noise seed 0 and 13 Heun steps (25 calls), the hosted CPU displayed 0.92 seconds.}\label{fig:app2}
+\end{figure}
+The cat remained recognisable in outline, but the output was blurred and facial details changed. This test shows that the application could decode, resize, perturb and process a new photograph. It does not show that the edited image is more faithful than the input. We did not measure peak signal to noise ratio, structural similarity or any perceptual restoration score.
+\begin{figure}[H]\centering
+\asset[width=.96\linewidth]{app_incognito.png}
+\caption[Generation in an Incognito session]{With the Incognito indicator visible, seed 1234 produced one image per model using 18 Heun steps and 35 calls. The hosted CPU displayed 2.39 seconds for TIW and 1.90 seconds for DSM(obs). This records one successful browser session, not a general timing benchmark or an audit of public access.}\label{fig:incognito}
 \end{figure}
 
-% ============================================================================
+
 \section{Limitations}\label{sec:limits}
-% ============================================================================
-\begin{itemize}[leftmargin=5mm,itemsep=2pt,topsep=1pt]
-\item \textbf{Reduced compute.} A \resParams M-parameter network, flips instead of EDM augmentation, and 3.51 Mimg instead of 11 Mimg for the comparison. Absolute FIDs are therefore not comparable to the paper. The comparison between methods is fair: same data, architecture, training length, seeds and evaluation.
-\item \textbf{One seed per model, one discriminator.} Each model was trained once and we used one discriminator checkpoint (10k iterations). The diversity loss we observe may depend strongly on that checkpoint; we could not test earlier, less confident checkpoints in the time available.
-\item \textbf{Scope.} Only CIFAR-10 LT at 5\% was reproduced. CIFAR-100, FFHQ, CelebA and the other reference sizes were not. Only the DSM(obs) baseline was trained on images; IW-DSM, DSM(ref) and the W/C ablations are implemented (\texttt{--mode iw|ref}, \texttt{--no\_reweight}, \texttt{--no\_correction}) but only tested in 2-D.
-\item \textbf{Measuring bias with a classifier.} The bias metric depends on a VGG13-BN trained on real CIFAR-10. Its errors on generated images, which may be off-distribution, are not corrected, and it measures only class-level bias.
-\item \textbf{The reference set defines ``unbiased''.} TIW-DSM moves toward whatever $\Dref$ represents. With 500 images and a 1.63:1 spread across classes, $\Dref$ is itself a noisy target. The method cannot judge whether a target distribution is fair.
-\item \textbf{Shared images.} 120 images appear in both sources. This slightly reduces the separability the discriminator can learn but was kept for fidelity to the released data.
-\item \textbf{Deployment.} $32\times32$ outputs are small. Image-to-image results on arbitrary uploads are limited by CIFAR-10's ten classes and resolution.
-\end{itemize}
+\lead{Scale and experimental control.} We matched the image data, denoiser architecture, effective batch size, number of training exposures and main evaluation protocol. Our network was smaller than the paper's, augmentation was limited to flips and the matched comparison ended during the learning rate ramp. TIW accumulated smaller batches and took a different path through the training code. Equal nominal seeds are therefore not a guarantee of identical initialisation or noise. We can describe a difference between these runs, but cannot assign all of it to the loss function.
 
-% ============================================================================
+\lead{Training variation.} Each image model was trained once. We used one discriminator trained for 10,000 updates and did not compare it with an earlier or less confident version. The three seeds used in the toy experiment are not three independent image training runs. We have neither a measure of variation between image training runs nor a calibration test on held out images. Clipping, gradient handling and mixed precision also separate the implemented loss from the exact theoretical objective.
+
+\lead{Scope of the reproduction.} We studied only the long tailed CIFAR 10 experiment with a 5\% reference set. We did not reproduce CIFAR 100, FFHQ, CelebA or the other reference sizes. DSM(obs) was the only baseline trained on images alongside TIW. The reference only model, clean importance weighting and variants without weighting or correction were implemented and tested in two dimensions only. The code exposes these through \texttt{--mode iw}, \texttt{--mode ref}, \texttt{--no\_reweight} and \texttt{--no\_correction}.
+
+\lead{Meaning of bias.} The reference set defines the target; the method cannot decide whether that target is fair. With 500 images and a largest to smallest class ratio of 1.625, the reference itself has sampling variation. The VGG13 evaluator was trained on real images, and we did not correct its errors on generated examples. Our measures describe the frequencies of ten classes, not every visual or social form of bias. The 120 images shared between the sources were retained for fidelity to the released experiment, and their effect was not measured separately.
+
+\lead{Archive and demonstration.} The published checkpoints, figures and numerical summaries allow others to inspect and evaluate the trained models. They do not include every raw training log or an exact record of all software versions. Evaluating saved weights is different from reproducing their training. The application generates at $32\times32$ resolution; its screenshots demonstrate specific runs rather than general robustness, restoration quality or freedom from bias. Optional local class labels are not part of the hosted demonstration.
+
 \section{Conclusion}\label{sec:conclusion}
-% ============================================================================
-We reproduced TIW-DSM from our own implementation on the authors' exact CIFAR-10 LT / 5\% data. Deriving the objective in EDM's denoiser form showed that TIW-DSM is standard diffusion training with a bounded per-sample weight $2d$ and a target shifted by $\sigma^2\nabla\log d$. Our analysis and the 2-D check show that the score-correction term is what removes the bias, while weighting alone leaves the minimiser unchanged. Under a reduced but equal budget (3.51 Mimg each), the debiasing effect reproduced. TIW-DSM raised the generated tail-class share from \resTailobs\% to \resTailtiw\% (target 50\%) and lowered the Eq.~51 bias by \resBiasRed\%. The FID improvement did not: \resFIDtiw{} vs.\ \resFIDobs{}, with lower recall. Our discriminator diagnostics explain this as near-zero weights for biased images at low noise, which shrink the effective training set at exactly the noise levels that control detail and diversity. The additional experiment showed that TIW-DSM keeps its bias advantage at every budget of 17 NFE or more, that Euler is competitive with Heun for this model, and that 25 NFE is a good deployment default. Our Streamlit application uses this default to serve the trained model live on unseen seeds and uploaded images.
+The original question was whether a small reference collection could teach a diffusion model what to generate more or less often. With the authors' 10,000 biased images and 500 reference images, we found evidence that it could. At equal training exposure the five rare classes accounted for \resTailtiw\% of TIW output, compared with \resTailobs\% for the baseline. The reference based bias score fell by \resBiasRed\%. The individual classes did not all reach their target of 10\%.
 
-\textbf{Future work:} first, regularise, temperature-scale or early-stop the discriminator so that $\tilde w$ is not saturated at small $t$, and re-train TIW-DSM (the cheapest test of our explanation); then train for the full 11 Mimg, use the paper-sized \texttt{base} network with EDM augmentation, run IW-DSM and the W/C ablations on images, and test larger reference sets (10--50\%).
+Our implementation used the mixture weight $2d$ and the correction $\sigma^2\nabla\log d$, with the clipping and numerical safeguards documented in Section~\ref{sec:practical}. The two dimensional test helped distinguish the role of the correction from that of the weight. On images, TIW obtained FID \resFIDtiw{} against \resFIDobs{} for ordinary DSM, with lower recall. This is a partial reproduction: the balance result improved, but the original paper's improvement in FID did not carry over. Extreme discriminator predictions are one possible explanation, not a demonstrated cause.
 
-% ============================================================================
+For the two trained models, TIW retained lower measured bias with either solver at all tested budgets of 17 calls or more. Heun at 13 steps is a reasonable option when waiting time matters. The deployed default remains 18 Heun steps. Generation from a seed, the cat upload and the Incognito test demonstrate how the saved model behaves outside the training notebook; none replaces evaluation on a large sample.
+
+The most useful next experiment would test the discriminator on images it did not see during training. Measuring calibration, effective weight and correction size separately by source, then varying early stopping, regularisation and the numerical safeguards, would help distinguish competing explanations. Longer matched runs, more seeds, a larger network, the original augmentation and tests of each loss term on images would show which results persist.
+
+\clearpage
 \section{References}\label{sec:refs}
 \begingroup
 \small
-\renewcommand{\section}[2]{}% suppress the bibliography's own unnumbered heading
+\renewcommand{\section}[2]{}
+\let\originalbibliography\thebibliography
+\renewcommand{\thebibliography}[1]{\originalbibliography{#1}\setlength{\itemsep}{1.3pt}\setlength{\parsep}{0pt}}
 \bibliographystyle{ieeetr}
 \bibliography{references}
 \endgroup
-
 \appendix
-% ============================================================================
-\section{Summary of Revisions from the Mid Report}\label{app:revisions}
-% ============================================================================
-\begin{itemize}[leftmargin=5mm,itemsep=1pt,topsep=1pt]
-\item \textbf{Literature review:} condensed; added the density-ratio estimation background \cite{sugiyama2012dre}, the EDM formulation and the connection to Discriminator Guidance and ADM, which our discriminator builds on.
-\item \textbf{Methodology (new):} the practical $\tilde w=2d$ form for training on $\Dobs$ (paper Eq.~36), our EDM-form derivation (Eq.~\ref{eq:edmtiw}) and the analysis of why weighting alone cannot debias (Section~\ref{sec:whyboth}).
-\item \textbf{EDA:} corrected the $\Dref$ max/min ratio to 65/40 = 1.625 (the D2 notebook printed 1.62, the report 1.63). Clarified that recovered labels are used only for analysis. Added the training-time preprocessing ($\Dobs$ with 20$\times$ reference repetition, discriminator perturbation).
-\item \textbf{Metrics:} added the paper's Eq.~51 bias metric, named the classifier (VGG13-BN, as in the paper), and cited and implemented recall \cite{kynkaanniemi2019pr}. In the proposal and Deliverable 2, ``35 steps'' was used loosely: 35 is the NFE of 18 Heun steps. The steps experiment now reports both.
-\end{itemize}
 
-\section{Reproducibility: exact commands}\label{app:commands}
+\section{Changes since the mid evaluation report}\label{app:revisions}
+The review now connects density ratio estimation \cite{sugiyama2012dre}, EDM, discriminator guidance and the ADM encoder. We derive the mixture weight $2d$ from Equation 36 of the paper, give the denoiser form in Equation~\ref{eq:edmtiw} and explain why weighting alone leaves the conditional DSM target unchanged.
+
+The exact reference class ratio is $65/40=1.625$; the mid evaluation notebook displayed 1.62 and the report displayed 1.63. We clarify why the recovered class labels are for analysis only and describe reference repetition and noise perturbation in the training pipeline.
+
+We added the Equation 51 bias measure, identified the VGG13 classifier and included generative recall \cite{kynkaanniemi2019pr}. The proposal and mid report used \emph{35 steps} loosely. Here, 18 Heun steps require 35 network evaluations. The solver study reports both counts.
+
+\section{Reproducing the reported runs}\label{app:commands}
+\subsection{Identify the code and weights}
+We inspected commit \texttt{ef6dae43fd7bdae7387b70a45eea891972b6e8e7}, dated 24 November 2026 \cite{team2026repro}. Its PDF was identical in bytes to the team's report before correction. This edition revises the writing; the checkpoints, measurements and figures are unchanged.
+
+Both deployment files correspond to \texttt{ema\_003512k.pt}, saved at 3,512,320 exposures. The SHA 256 prefixes agree with those in \texttt{results/eval\_obs.json} and \texttt{results/eval\_tiw.json}. The complete file identifiers are:
 \begin{lstlisting}
-python scripts/prepare_data.py
-python scripts/toy_2d.py
-python scripts/train_discriminator.py --iters 10000
-python scripts/train_score.py --mode obs --outdir runs/obs --duration_mimg <D>
-python scripts/train_score.py --mode tiw --outdir runs/tiw --duration_mimg <D>
-python scripts/evaluate.py --ckpt runs/obs/ema_final.pt --name obs --num 50000
-python scripts/evaluate.py --ckpt runs/tiw/ema_final.pt --name tiw --num 50000
-for r in bias ref target; do python scripts/evaluate.py --real $r --name data_$r; done
-python scripts/steps_experiment.py --ckpt obs=runs/obs/ema_final.pt --ckpt tiw=runs/tiw/ema_final.pt --num 10000
-python scripts/make_report_assets.py --runs obs=runs/obs tiw=runs/tiw
-cd report && latexmk -pdf main.tex
+checkpoints/deploy/dsm_obs.pt
+ab1183b3a4eac00aac3f88a9b7ec4ef5a0f6f38799b40f6cc8ec5a29948512f2
+
+checkpoints/deploy/tiw_dsm.pt
+1366bae91a890407772bfabeae1f452e72304d5fc06e8c2dca49811c466a543c
 \end{lstlisting}
 
+\subsection{Evaluate the released checkpoints}
+From the project root, prepare the research data and evaluation models, including Inception and VGG13. Full evaluation on a CPU is expensive. New output names protect the archived results. The backslashes below continue shell commands onto another line. In PowerShell, omit them and enter each command on one line.
+\par\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}
+python -m pip install -r requirements.txt
+python scripts/prepare_data.py
+python scripts/evaluate.py --ckpt checkpoints/deploy/dsm_obs.pt \
+  --name reeval_obs --num 50000 --steps 18 --solver heun --batch 500 \
+  --seed_offset 0
+python scripts/evaluate.py --ckpt checkpoints/deploy/tiw_dsm.pt \
+  --name reeval_tiw --num 50000 --steps 18 --solver heun --batch 500 \
+  --seed_offset 0
+python scripts/evaluate.py --real bias --name reeval_data_bias
+python scripts/evaluate.py --real ref --name reeval_data_ref
+python scripts/evaluate.py --real target --name reeval_data_target
+python scripts/steps_experiment.py --ckpt obs=checkpoints/deploy/dsm_obs.pt \
+  --ckpt tiw=checkpoints/deploy/tiw_dsm.pt --num 10000 --batch 500 \
+  --out results/steps_reeval.json
+\end{lstlisting}
+\end{minipage}\par
+Use a fresh solver results path: the script checks the model label, solver and step count but not the checkpoint identity when it skips completed settings. Hardware and libraries can change measurements. A replacement classifier changes the evaluation configuration. The baseline at 11 million exposures needs a separate checkpoint not included with the two deployment files.
+
+\subsection{Train two models at the same exposure budget}
+The historical baseline reached 11 million exposures and TIW reached 3.91 million. For the main comparison we evaluated their earlier, shared checkpoint. The commands below instead request new training runs with the same final budget of 3.51232 million exposures. Use new output directories. One CUDA processor can run them sequentially; the original runs used separate T4 processors in parallel.
+\par\noindent\begin{minipage}{\linewidth}
+\begin{lstlisting}
+python scripts/toy_2d.py
+python scripts/train_discriminator.py --iters 10000 --batch 128 \
+  --lr 0.0003 --seed 0 --backbone adm --out checkpoints/recheck_discriminator.pt
+python scripts/train_score.py --mode obs --outdir runs/recheck_obs \
+  --preset small --batch 256 --accum 1 --lr 0.001 --lr_rampup_kimg 10000 \
+  --ema_halflife_kimg 500 --duration_mimg 3.51232 --snapshot_kimg 500 \
+  --time_limit_h 11.3 --seed 0 --amp
+python scripts/train_score.py --mode tiw --outdir runs/recheck_tiw \
+  --disc checkpoints/recheck_discriminator.pt --preset small --batch 256 \
+  --accum 2 --lr 0.001 --lr_rampup_kimg 10000 --ema_halflife_kimg 500 \
+  --duration_mimg 3.51232 --snapshot_kimg 500 --time_limit_h 11.3 --seed 0 --amp
+\end{lstlisting}
+\end{minipage}\par
+When both runs finish, evaluate each new \texttt{ema\_003512k.pt} rather than final snapshots of different lengths. A run interrupted by its time limit can be resumed with the same command. Not every state of the random number generators used by the device and data loader is saved, so resumption need not be identical in every bit. Record results of new evaluations as new measurements. Repeated training runs would be needed to estimate variability.
+
+\subsection{Compile the report or start the application}
+The LaTeX project includes the measured tables, bibliography and figures. Compiling the report does not require training, downloading data or regenerating figures.
+\begin{lstlisting}
+# From the folder containing main.tex:
+latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex
+
+# Alternatively, in that same folder:
+pdflatex main.tex
+bibtex main
+pdflatex main.tex
+pdflatex main.tex
+
+# From the project repository root:
+python -m streamlit run app/streamlit_app.py
+\end{lstlisting}
+The optional script that regenerates the report figures needs the original raw training logs to draw the learning curves. Without those logs it can overwrite existing results with missing values. Use the supplied figures for this report. Rebuild them only when documenting a new experiment with its own complete records.
 \end{document}
